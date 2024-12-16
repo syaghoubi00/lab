@@ -1,0 +1,2 @@
+- name: Install ZFS
+  ansible.builtin.include_tasks: "{{ ansible_distribution }}.yaml"
