@@ -35,6 +35,7 @@
   ansible.builtin.apt_repository:
     repo: "deb [arch={{ arch }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
     state: present
+    filename: docker
 
 - name: Install Docker engine
   become: true
