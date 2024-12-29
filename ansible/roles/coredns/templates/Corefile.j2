@@ -1,0 +1,10 @@
+{{ ansible_managed | comment }}
+
+.:53 {
+    forward . 8.8.8.8 8.8.4.4
+    cache 30
+    errors
+    health
+    log
+    reload
+}

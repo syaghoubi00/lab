@@ -1,0 +1,17 @@
+- name: Install CoreDNS
+  ansible.builtin.include_tasks: install.yaml
+
+- name: Start CoreDNS service
+  ansible.builtin.include_tasks: start-service.yaml
+
+- name: Get CoreDNS status
+  ansible.builtin.systemd_service:
+    name: coredns
+  register: coredns_service
+
+- name: Assert CoreDNS service is active
+  ansible.builtin.assert:
+    that: "coredns_service.status.ActiveState == 'active'"
+    success_msg: "CoreDNS is successfully installed and is running"
+    fail_msg: "The service: {{ coredns_service.name }} is not running!"
+  when: coredns_service is defined
