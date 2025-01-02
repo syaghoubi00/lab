@@ -1,5 +1,0 @@
-coredns_auto_update: false # Don't automatically update to latest by default
-coredns_group: coredns # name of coreDNS group
-coredns_port: 53 # port CoreDNS will listen on
-coredns_user: coredns # name of CoreDNS user
-coredns_version: null # undefined will use latest
