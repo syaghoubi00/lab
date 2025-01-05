@@ -1,2 +1,0 @@
-- name: Install rootful Docker
-  ansible.builtin.include_tasks: "{{ ansible_distribution }}.rootful.docker.yaml"

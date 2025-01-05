@@ -7,3 +7,6 @@ roles:
   - name: bind
     src: https://github.com/syaghoubi00/ansible-role-bind
     version: main
+  - name: docker
+    src: https://github.com/syaghoubi00/ansible-role-docker
+    version: main
