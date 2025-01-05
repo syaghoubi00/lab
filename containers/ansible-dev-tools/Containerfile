@@ -1,0 +1,4 @@
+# Needed until upstream includes 'molecule-plugins'
+FROM ghcr.io/ansible/community-ansible-dev-tools:latest
+
+RUN pip install molecule-plugins
