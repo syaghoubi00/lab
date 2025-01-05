@@ -1,0 +1,50 @@
+# TODO: Test gRPC for forwarders
+
+# Base config snippet
+(base) {
+  cache
+  log
+  errors
+  # cancel 1s
+}
+
+.:53 {
+  import base
+  reload
+  health :8530
+  # HACK: Rewrite external domain name to an internal one to deconflict zones
+  # - regex matches all subdomains and rewrites to 'zags.internal'
+  # - answer auto responds with 'local.zags.dev' instead of 'zags.internal'
+  # NOTE: The answer responds with 'subdomain.local.zags.dev' in the record
+  # NOTE: Does not resolve 'local.zags.dev' because it is above the subdomain
+  # - Could maybe do some regex to match both?
+  # - A seperate rewrite is easier if needed
+  rewrite name regex (.*).local.zags.dev zags.internal answer auto
+  hosts {
+    10.11.14.50 zags.internal
+    # NOTE: Needs to 'fallthrough' to next plugin 'forward'
+    # - to resolve all domains not defined in hosts
+    fallthrough
+  }
+  forward . 127.0.0.1:5301 127.0.0.1:5302
+}
+
+# Needs seperate instances because they use different tls_servername
+# Upstream DoT
+.:5301 {
+  import base
+  health :8531
+  forward . tls://8.8.8.8 tls://8.8.4.4 {
+    tls_servername dns.google
+    health_check 5s
+  }
+}
+# Upstream DoT
+.:5302 {
+  import base
+  health :8532
+  forward . tls://1.1.1.1 tls://1.0.0.1 {
+    tls_servername cloudflare-dns.com
+    health_check 5s
+  }
+}
