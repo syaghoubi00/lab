@@ -1,0 +1,17 @@
+man man-pages man-db
+flatpak-spawn
+fd-find fzf ripgrep bat bash-completion tree zoxide tmux
+gcc
+git pgp-tools
+go
+iperf3 iputils netcat wget bind-utils
+ipmitool
+lm_sensors htop
+neovim python3-neovim
+opentofu
+perl-Image-ExifTool ImageMagick
+pip poetry
+rust cargo
+usbutils
+xorriso
+jq yq

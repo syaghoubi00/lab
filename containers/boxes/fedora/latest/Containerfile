@@ -1,0 +1,28 @@
+FROM registry.fedoraproject.org/fedora:latest
+
+LABEL com.github.containers.toolbox="true"
+
+COPY package-list /tmp/package-list
+
+# Add dnf conf, since default doesnt install manpages
+COPY etc/dnf/dnf.conf /etc/dnf/dnf.conf
+# Install everything in package-list
+RUN dnf install -y $(cat /tmp/package-list) && dnf clean all
+
+# Switched to container
+# RUN python3 -m pip --no-cache-dir install molecule molecule-plugins ansible-dev-tools
+
+# Tmp dir for binaries
+RUN mkdir /tmp/bin/
+# Hugo
+RUN hugo_latest_version="$(wget -qO- https://api.github.com/repos/gohugoio/hugo/releases/latest | jq -r '.tag_name' | cut -c 2-)"; wget -qO /tmp/hugo https://github.com/gohugoio/hugo/releases/latest/download/hugo_extended_${hugo_latest_version}_linux-amd64.tar.gz && \
+  tar xzvf /tmp/hugo -C /tmp/bin/ hugo && rm /tmp/hugo
+# Docker-compose
+RUN wget -qO /tmp/bin/docker-compose https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+
+# Cleanup tmp
+RUN chmod +x /tmp/bin/* && mv /tmp/bin/* /bin && rmdir /tmp/bin/
+
+# Script for running host commands from within the container
+COPY host-exec /usr/bin/host-exec
+RUN ln -s /usr/bin/host-exec /usr/bin/podman
