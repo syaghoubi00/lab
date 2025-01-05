@@ -1,0 +1,28 @@
+- name: Update lab packages
+  become: true
+  hosts: all
+  gather_facts: true
+  tags: update
+  tasks:
+    - name: Update apt systems
+      ansible.builtin.apt:
+        package: "*"
+        update_cache: true
+        autoremove: true
+        autoclean: true
+        state: latest
+      when: ansible_os_family == 'Debian'
+    - name: Update dnf systems
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+      when: ansible_os_family == 'RedHat'
+
+- name: Seed lab
+  become: true
+  hosts: seed
+  gather_facts: true
+  vars:
+    coredns_corefile: ./configs/coredns/Corefile
+  roles:
+    - coredns
