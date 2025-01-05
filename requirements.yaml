@@ -4,3 +4,6 @@ roles:
   - name: coredns
     src: https://github.com/syaghoubi00/ansible-role-coredns
     version: main
+  - name: bind
+    src: https://github.com/syaghoubi00/ansible-role-bind
+    version: main
