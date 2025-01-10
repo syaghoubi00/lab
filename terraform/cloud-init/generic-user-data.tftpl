@@ -1,0 +1,23 @@
+#cloud-config
+${yamlencode({
+    ssh_pwauth = false
+
+    hostname = hostname
+
+    users = [
+      {
+        name = cloud_init_user
+        groups = "wheel"
+        sudo = "ALL=(ALL) NOPASSWD:ALL"
+        shell = "/bin/bash"
+        lock_passwd = true
+        ssh_authorized_keys = ssh_authorized_keys
+      }
+    ]
+    write_files = [
+      {
+        path = "/etc/issue.d/ip.issue"
+        content = "IP: \\4\n"
+      }
+    ]
+  })}
