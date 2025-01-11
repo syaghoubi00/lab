@@ -8,7 +8,7 @@ iperf3 iputils netcat wget bind-utils
 ipmitool
 lm_sensors htop
 neovim python3-neovim
-opentofu
+ansible opentofu
 perl-Image-ExifTool ImageMagick
 pip poetry
 rust cargo
