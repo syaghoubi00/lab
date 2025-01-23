@@ -6,7 +6,7 @@ git pgp-tools
 go
 iperf3 iputils netcat wget bind-utils
 ipmitool
-lm_sensors htop
+lm_sensors htop ncdu
 neovim python3-neovim
 ansible opentofu
 perl-Image-ExifTool ImageMagick
