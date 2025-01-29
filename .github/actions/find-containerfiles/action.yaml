@@ -18,14 +18,19 @@ runs:
     - id: find-containers
       shell: bash
       run: |
-        # Create temporary bake file
+        # Initialize arrays
+        declare -a files
+        declare -a images
+        declare -a target_names
+
+        # Create temporary files
         bake_file="/tmp/docker-bake.hcl"
-        echo "group \"default\" {" > "$bake_file"
-        echo "  targets = [" >> "$bake_file"
+        json_file="/tmp/bake-config.json"
 
-        files=()
-        images=()
+        # Initialize JSON structure
+        echo '{"group": {"default": {"targets": []}}, "target": {}}' > "$json_file"
 
+        # Find and process Containerfiles
         while IFS= read -r containerfile; do
           # Parse path components
           dir_path=$(dirname "$containerfile" | sed 's|containers/||')
@@ -33,27 +38,49 @@ runs:
           app_name=$(echo "$dir_path" | cut -d'/' -f2)
           tag_name=$(echo "$dir_path" | cut -d'/' -f3)
 
-          # Create image name: boxes-fedora:latest
+          # Create names
           image_name="${parent_dir}-${app_name}"
+          target_name="${image_name}-${tag_name}"
 
+          # Add to arrays
           files+=("$containerfile")
           images+=("ghcr.io/${{ github.repository_owner }}/${image_name}:${tag_name}")
+          target_names+=("$target_name")
 
-          # Add target to bake file
-          echo "    \"${image_name}-${tag_name}\"," >> "$bake_file"
+          # Add target configuration
+          jq --arg tn "$target_name" \
+             --arg df "$containerfile" \
+             --arg ctx "$(dirname "$containerfile")" \
+             --arg tag "ghcr.io/${{ github.repository_owner }}/${image_name}:${tag_name}" \
+             '.target[$tn] = {
+               "dockerfile": $df,
+               "context": $ctx,
+               "tags": [$tag]
+             }' "$json_file" > "${json_file}.tmp" && mv "${json_file}.tmp" "$json_file"
 
-          # Add target definition
-          cat >> "$bake_file" <<EOF
-          target "${image_name}-${tag_name}" {
-            dockerfile = "$containerfile"
-            context = "$(dirname "$containerfile")"
-            tags = ["ghcr.io/${{ github.repository_owner }}/${image_name}:${tag_name}"]
-          }
-        EOF
+          # Add target to default group
+          jq --arg tn "$target_name" \
+             '.group.default.targets += [$tn]' "$json_file" > "${json_file}.tmp" && mv "${json_file}.tmp" "$json_file"
         done < <(find containers -name "Containerfile" -type f)
 
-        echo "  ]" >> "$bake_file"
-        echo "}" >> "$bake_file"
+        # Convert JSON to HCL using hcl-to-json reversed
+        jq -r 'to_entries | .[] | . as $root | 
+          if .key == "group" then
+            .value | to_entries | .[] | 
+            "group \"\(.key)\" {\n  targets = [\n    " + 
+            (.value.targets | map("\"\(.)\"") | join(",\n    ")) + 
+            "\n  ]\n}"
+          else
+            .value | to_entries | .[] |
+            "\ntarget \"\(.key)\" {\n  " +
+            (to_entries | map("  \(.key) = " + 
+            if .value | type == "array" then
+              "[\n    " + (.value | map("\"\(.)\"") | join(",\n    ")) + "\n  ]"
+            else
+              "\"\(.value)\""
+            end) | join("\n  ")) +
+            "\n}"
+          end' "$json_file" > "$bake_file"
 
         # Set outputs
         echo "files=${files[*]}" >> $GITHUB_OUTPUT
