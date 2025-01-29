@@ -18,71 +18,107 @@ runs:
     - id: find-containers
       shell: bash
       run: |
+        bake_file="${GITHUB_WORKSPACE}/docker-bake.json"
+
         # Initialize arrays
         declare -a files
         declare -a images
-        declare -a target_names
 
-        # Create temporary files
-        bake_file="/tmp/docker-bake.hcl"
-        json_file="/tmp/bake-config.json"
+        # Initialize the basic structure
+        cat >"$bake_file" <<EOF
+        {
+          "group": {
+            "default": {
+              "targets": []
+            }
+          },
+          "target": {}
+        }
+        EOF
 
-        # Initialize JSON structure
-        echo '{"group": {"default": {"targets": []}}, "target": {}}' > "$json_file"
+        while IFS= read -r dockerfile; do
+          rel_path=${dockerfile#containers/}
+          dir_path=$(dirname "$rel_path")
+          context_dir=$(dirname "$dockerfile")
 
-        # Find and process Containerfiles
-        while IFS= read -r containerfile; do
-          # Parse path components
-          dir_path=$(dirname "$containerfile" | sed 's|containers/||')
-          parent_dir=$(echo "$dir_path" | cut -d'/' -f1)
-          app_name=$(echo "$dir_path" | cut -d'/' -f2)
-          tag_name=$(echo "$dir_path" | cut -d'/' -f3)
+          # Determine the dockerfile name (Containerfile or Dockerfile)
+          # since buildkit doesn't detect Containerfile
+          # as of github.com/docker/buildx v0.20.0 8e30c46
+          if [ -f "${context_dir}/Containerfile" ]; then
+            dockerfile_name="Containerfile"
+          else
+            dockerfile_name="Dockerfile"
+          fi
 
-          # Create names
-          image_name="${parent_dir}-${app_name}"
-          target_name="${image_name}-${tag_name}"
+          # Count path segments in dir_path (without containers/ prefix)
+          segment_count=$(echo "$dir_path" | tr -cd '/' | wc -c)
+          segment_count=$((segment_count + 1))
+
+          case $segment_count in
+            1) # Single level: ansible-dev-tools
+              target_name="$dir_path"
+              image_name="$dir_path"
+              tag_name="latest"
+              ;;
+            2) # Two levels: fedora/41
+              parent_dir=$(echo "$dir_path" | cut -d'/' -f1)
+              tag_name=$(echo "$dir_path" | cut -d'/' -f2)
+              target_name="${parent_dir}-${tag_name}"
+              image_name="${parent_dir}"
+              ;;
+            3) # Three levels: boxes/fedora/latest
+              parent_dir=$(echo "$dir_path" | cut -d'/' -f1)
+              app_name=$(echo "$dir_path" | cut -d'/' -f2)
+              tag_name=$(echo "$dir_path" | cut -d'/' -f3)
+              target_name="${parent_dir}-${app_name}-${tag_name}"
+              image_name="${parent_dir}-${app_name}"
+              ;;
+            *)
+              echo "Warning: Unexpected directory depth for $dockerfile"
+              continue
+              ;;
+          esac
 
           # Add to arrays
           files+=("$containerfile")
           images+=("ghcr.io/${{ github.repository_owner }}/${image_name}:${tag_name}")
-          target_names+=("$target_name")
 
           # Add target configuration
           jq --arg tn "$target_name" \
-             --arg df "$containerfile" \
-             --arg ctx "$(dirname "$containerfile")" \
-             --arg tag "ghcr.io/${{ github.repository_owner }}/${image_name}:${tag_name}" \
-             '.target[$tn] = {
-               "dockerfile": $df,
-               "context": $ctx,
-               "tags": [$tag]
-             }' "$json_file" > "${json_file}.tmp" && mv "${json_file}.tmp" "$json_file"
+            --arg ctx "$context_dir" \
+            --arg df "$dockerfile_name" \
+            --arg tag "ghcr.io/${{ github.repository_owner }}/${image_name}:${tag_name}" \
+            '.target[$tn] = {
+                  "context": $ctx,
+                  "dockerfile": $df,
+                  "tags": [$tag]
+                }' "$bake_file" >"${bake_file}.tmp" && mv "${bake_file}.tmp" "$bake_file"
 
           # Add target to default group
           jq --arg tn "$target_name" \
-             '.group.default.targets += [$tn]' "$json_file" > "${json_file}.tmp" && mv "${json_file}.tmp" "$json_file"
-        done < <(find containers -name "Containerfile" -type f)
-
-        # Convert JSON to HCL using hcl-to-json reversed
-        jq -r 'to_entries | .[] | . as $root | 
-          if .key == "group" then
-            .value | to_entries | .[] | 
-            "group \"\(.key)\" {\n  targets = [\n    " + 
-            (.value.targets | map("\"\(.)\"") | join(",\n    ")) + 
-            "\n  ]\n}"
-          else
-            .value | to_entries | .[] |
-            "\ntarget \"\(.key)\" {\n  " +
-            (to_entries | map("  \(.key) = " + 
-            if .value | type == "array" then
-              "[\n    " + (.value | map("\"\(.)\"") | join(",\n    ")) + "\n  ]"
-            else
-              "\"\(.value)\""
-            end) | join("\n  ")) +
-            "\n}"
-          end' "$json_file" > "$bake_file"
+            '.group.default.targets += [$tn]' "$bake_file" >"${bake_file}.tmp" && mv "${bake_file}.tmp" "$bake_file"
+        done < <(find containers -type f \( -name "Containerfile" -o -name "Dockerfile" \))
 
         # Set outputs
         echo "files=${files[*]}" >> $GITHUB_OUTPUT
         echo "images=${images[*]}" >> $GITHUB_OUTPUT
-        echo "bake-file=$bake_file" >> $GITHUB_OUTPUT
+        echo "bake-file=${bake_file}" >> $GITHUB_OUTPUT
+
+    - id: validate-bake-file
+      shell: bash
+      run: |
+        BAKE_FILE="${{ steps.find-containers.outputs.bake-file }}"
+
+        # Validate the file exists
+        if [ ! -f "$BAKE_FILE" ]; then
+          echo "Error: Bake file not found at $BAKE_FILE"
+          exit 1
+        fi
+
+        # Validate syntax and check contexts
+        if ! docker buildx bake --file "$BAKE_FILE" --check; then
+          echo "Error: Bake file validation failed"
+          exit 1
+        fi
+
+        echo "Bake file validation successful!"
