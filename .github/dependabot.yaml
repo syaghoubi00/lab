@@ -8,12 +8,6 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Etc/UTC"
-    labels:
-      - "dependencies"
-      - "github-actions"
-      - "automation"
-      - type:action
-      - area:ci
     groups:
       # Group GitHub Actions by functionality
       testing-actions:
@@ -34,7 +28,7 @@ updates:
           - "*buildx*"
           - "*container*"
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "chore"
       include: "scope"
     open-pull-requests-limit: 5
 
@@ -46,17 +40,12 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Etc/UTC"
-    labels:
-      - "dependencies"
-      - "containers"
-      - "security"
-      - type:container
     groups:
       containers:
         patterns:
           - "*"
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "chore"
       include: "scope"
     open-pull-requests-limit: 10
 
@@ -68,16 +57,11 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Etc/UTC"
-    labels:
-      - "dependencies"
-      - "containers"
-      - "security"
-      - type:container
     groups:
       containers:
         patterns:
           - "*"
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "chore"
       include: "scope"
     open-pull-requests-limit: 10
