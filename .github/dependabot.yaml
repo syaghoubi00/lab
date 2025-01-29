@@ -7,6 +7,7 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
+      timezone: "Etc/UTC"
     labels:
       - "dependencies"
       - "containers"
@@ -20,14 +21,7 @@ updates:
       prefix: "chore(deps)"
       include: "scope"
     open-pull-requests-limit: 10
-    reviewers:
-      - "syaghoubi00"
     versioning-strategy: "auto"
-    automated-security-updates:
-      allow:
-        - dependency-type: "all"
-    security-updates:
-      auto-merge: true
 
   # GitHub Actions updates
   - package-ecosystem: "github-actions"
@@ -36,6 +30,7 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
+      timezone: "Etc/UTC"
     labels:
       - "dependencies"
       - "github-actions"
@@ -65,8 +60,3 @@ updates:
       prefix: "chore(deps)"
       include: "scope"
     open-pull-requests-limit: 5
-    automated-security-updates:
-      allow:
-        - dependency-type: "all"
-    security-updates:
-      auto-merge: true
