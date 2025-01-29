@@ -44,7 +44,9 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          token: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: false # Fail fast if login fails
 
       - name: Cache Docker layers
         uses: actions/cache@v3
