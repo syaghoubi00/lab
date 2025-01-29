@@ -1,0 +1,97 @@
+name: Update Dependabot Config
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "containers/**"
+jobs:
+  update-dependabot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate Dependabot Config
+        run: |
+          cat << 'EOF' > .github/dependabot.yaml
+          version: 2
+          updates:
+            # GitHub Actions updates
+            - package-ecosystem: "github-actions"
+              directory: "/"
+              schedule:
+                interval: "weekly"
+                day: "monday"
+                time: "09:00"
+                timezone: "Etc/UTC"
+              labels:
+                - "dependencies"
+                - "github-actions"
+                - "automation"
+                - type:action
+                - area:ci
+              groups:
+                # Group GitHub Actions by functionality
+                testing-actions:
+                  patterns:
+                    - "actions/checkout*"
+                    - "actions/setup-*"
+                  update-types:
+                    - "minor"
+                    - "patch"
+                security-actions:
+                  patterns:
+                    - "*trivy*"
+                    - "*snyk*"
+                    - "*codeql*"
+                docker-actions:
+                  patterns:
+                    - "docker/*"
+                    - "*buildx*"
+                    - "*container*"
+              commit-message:
+                prefix: "chore(deps)"
+                include: "scope"
+              open-pull-requests-limit: 5
+          EOF
+
+          # Dynamically add container configurations
+          for dir in $(find containers -name "Containerfile" -exec dirname {} \;); do
+            cat << EOF >> .github/dependabot.yaml
+
+            # Docker container updates for $dir
+            - package-ecosystem: "docker"
+              directory: "/$dir"
+              schedule:
+                interval: "weekly"
+                day: "monday"
+                time: "09:00"
+                timezone: "Etc/UTC"
+              labels:
+                - "dependencies"
+                - "containers"
+                - "security"
+                - type:container
+              groups:
+                containers:
+                  patterns:
+                    - "*"
+              commit-message:
+                prefix: "chore(deps)"
+                include: "scope"
+              open-pull-requests-limit: 10
+          EOF
+          done
+
+      - name: Commit changes
+        run: |
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .github/dependabot.yaml
+          git commit -m "chore: update dependabot configuration" || exit 0
+          git push
