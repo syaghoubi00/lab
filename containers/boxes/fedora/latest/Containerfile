@@ -24,5 +24,6 @@ RUN wget -qO /tmp/bin/docker-compose https://github.com/docker/compose/releases/
 RUN chmod +x /tmp/bin/* && mv /tmp/bin/* /bin && rmdir /tmp/bin/
 
 # Script for running host commands from within the container
-COPY host-exec /usr/bin/host-exec
-RUN ln -s /usr/bin/host-exec /usr/bin/podman
+COPY host-cmd.sh /usr/bin/host-cmd
+# Link podman to host-cmd to pass `podman` commands to host
+RUN ln -s /usr/bin/host-cmd /usr/bin/podman
