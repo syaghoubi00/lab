@@ -15,6 +15,6 @@ on:
 
 jobs:
   build:
-    uses: ./container-build.yaml
+    uses: ./.github/workflows/container-build.yaml
     with:
       platforms: '["linux/amd64"]'
