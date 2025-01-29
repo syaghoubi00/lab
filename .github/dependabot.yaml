@@ -21,7 +21,6 @@ updates:
       prefix: "chore(deps)"
       include: "scope"
     open-pull-requests-limit: 10
-    versioning-strategy: "auto"
 
   # GitHub Actions updates
   - package-ecosystem: "github-actions"
