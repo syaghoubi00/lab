@@ -1,0 +1,72 @@
+version: 2
+updates:
+  # Docker container updates
+  - package-ecosystem: "docker"
+    directory: "/containers"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "containers"
+      - "security"
+      - type:container
+    groups:
+      containers:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "syaghoubi00"
+    versioning-strategy: "auto"
+    automated-security-updates:
+      allow:
+        - dependency-type: "all"
+    security-updates:
+      auto-merge: true
+
+  # GitHub Actions updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automation"
+      - type:action
+      - area:ci
+    groups:
+      # Group GitHub Actions by functionality
+      testing-actions:
+        patterns:
+          - "actions/checkout*"
+          - "actions/setup-*"
+        update-types:
+          - "minor"
+          - "patch"
+      security-actions:
+        patterns:
+          - "*trivy*"
+          - "*snyk*"
+          - "*codeql*"
+      docker-actions:
+        patterns:
+          - "docker/*"
+          - "*buildx*"
+          - "*container*"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    open-pull-requests-limit: 5
+    automated-security-updates:
+      allow:
+        - dependency-type: "all"
+    security-updates:
+      auto-merge: true
