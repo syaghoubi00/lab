@@ -18,3 +18,7 @@ jobs:
     uses: ./.github/workflows/container-build.yaml
     with:
       platforms: '["linux/amd64"]'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
