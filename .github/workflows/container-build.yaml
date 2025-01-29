@@ -6,47 +6,65 @@ on:
       platforms:
         required: true
         type: string
-      # slsa-provenance:
-      #   required: true
-      #   type: string
+      registry:
+        required: false
+        type: string
+        default: "ghcr.io"
     outputs:
       build-status:
         description: "Status of container builds"
         value: ${{ jobs.build.outputs.build-status }}
+      provenance-status:
+        description: "Status of SLSA provenance generation"
+        value: ${{ jobs.build.outputs.provenance-status }}
+      sbom-status:
+        description: "Status of SBOM generation"
+        value: ${{ jobs.build.outputs.sbom-status }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         platform: ${{ fromJson(inputs.platforms) }}
-    # permissions:
-    #   contents: read
-    #   packages: write
-    #   id-token: write
+      fail-fast: false
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
     outputs:
-      # provenance-paths: ${{ steps.provenance.outputs.paths }}
-      build-status: ${{ steps.build-containers.outputs.build-status }}
+      build-status: ${{ steps.build-containers.outputs.status }}
+      provenance-status: ${{ steps.provenance.outputs.status }}
+      sbom-status: ${{ steps.generate-sbom.outputs.status }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: ${{ matrix.platform }}
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.1.1
-
-      # - name: Install SLSA tooling
-      #   uses: slsa-framework/slsa-github-generator/actions/installer@v1.9.0
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+        uses: sigstore/cosign-installer@v3.2.0
         with:
-          registry: ghcr.io
+          cosign-release: "v2.2.0"
+
+      - name: Install SLSA verifier
+        uses: slsa-framework/slsa-verifier/actions/installer@v2.4.1
+
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0.15.1
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.registry }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: false # Fail fast if login fails
 
       - name: Cache Docker layers
         uses: actions/cache@v3
@@ -54,13 +72,15 @@ jobs:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ matrix.platform }}
           restore-keys: |
+            ${{ runner.os }}-buildx-${{ github.sha }}-
             ${{ runner.os }}-buildx-
 
       - name: Find Containerfiles
         id: containerfiles
         uses: ./.github/actions/find-containerfiles
 
-      - name: Build and Sign Containers
+      - name: Build and Push Containers
+        id: build-containers
         uses: docker/bake-action@v5
         with:
           files: ${{ steps.containerfiles.outputs.bake-file }}
@@ -69,7 +89,185 @@ jobs:
             *.platform=${{ matrix.platform }}
             *.cache-from=type=local,src=/tmp/.buildx-cache
             *.cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max
-            *.provenance=mode=max
-            *.attestation-type=slsa
-            *.registry=ghcr.io
-            *.repository=${{ github.repository_owner }}
+            *.tags=${{ steps.containerfiles.outputs.images }}
+
+      - name: Generate SLSA Provenance
+        id: provenance
+        run: |
+          slsa-verifier generate --source-uri="github.com/${{ github.repository }}" \
+            --source-tag=${{ github.ref_name }} \
+            --artifact-path="${{ steps.containerfiles.outputs.files }}" \
+            --output-path=provenance.json
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.containerfiles.outputs.images }}
+          format: spdx-json
+          artifact-name: sbom.spdx.json
+
+      - name: Sign Images and Attestations
+        if: success()
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          for image in ${{ steps.containerfiles.outputs.images }}; do
+            # Sign the container image
+            cosign sign --yes "${image}@${{ steps.build-containers.outputs.digest }}"
+            
+            # Sign both SLSA provenance and SBOM in parallel
+            if [ -f "provenance.json" ] && [ -f "sbom.spdx.json" ]; then
+              {
+                cosign attest --yes --type slsaprovenance --predicate provenance.json "${image}@${{ steps.build-containers.outputs.digest }}"
+              } &
+              {
+                cosign attest --yes --type spdxjson --predicate sbom.spdx.json "${image}@${{ steps.build-containers.outputs.digest }}"
+              } &
+              wait
+            fi
+          done
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ matrix.platform }}
+          path: |
+            provenance.json
+            sbom.spdx.json
+          retention-days: 90
+
+      - name: Cleanup Cache
+        if: always()
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+# name: Container Build
+#
+# on:
+#   workflow_call:
+#     inputs:
+#       platforms:
+#         required: true
+#         type: string
+#       # slsa-provenance:
+#       #   required: true
+#       #   type: string
+#     outputs:
+#       build-status:
+#         description: "Status of container builds"
+#         value: ${{ jobs.build.outputs.build-status }}
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         platform: ${{ fromJson(inputs.platforms) }}
+#     # permissions:
+#     #   contents: read
+#     #   packages: write
+#     #   id-token: write
+#     outputs:
+#       # provenance-paths: ${{ steps.provenance.outputs.paths }}
+#       build-status: ${{ steps.build-containers.outputs.build-status }}
+#
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+#
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v2
+#
+#       - name: Install Cosign
+#         uses: sigstore/cosign-installer@v3.1.1
+#
+#       # - name: Install SLSA tooling
+#       #   uses: slsa-framework/slsa-github-generator/actions/installer@v1.9.0
+#
+#       - name: Login to GitHub Container Registry
+#         uses: docker/login-action@v2
+#         with:
+#           registry: ghcr.io
+#           username: ${{ github.actor }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
+#         continue-on-error: false # Fail fast if login fails
+#
+#       - name: Cache Docker layers
+#         uses: actions/cache@v3
+#         with:
+#           path: /tmp/.buildx-cache
+#           key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ matrix.platform }}
+#           restore-keys: |
+#             ${{ runner.os }}-buildx-
+#
+#       - name: Find Containerfiles
+#         id: containerfiles
+#         uses: ./.github/actions/find-containerfiles
+#
+#       - name: Build and Push Containers
+#         uses: docker/bake-action@v5
+#         with:
+#           files: ${{ steps.containerfiles.outputs.bake-file }}
+#           push: true
+#           set: |
+#             *.platform=${{ matrix.platform }}
+#             *.cache-from=type=local,src=/tmp/.buildx-cache
+#             *.cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max
+#             *.tags=${{ steps.containerfiles.outputs.images }}
+#
+#       - name: Sign the images with GitHub OIDC Token
+#         env:
+#           COSIGN_EXPERIMENTAL: 1
+#         run: |
+#           cosign sign --yes ${{ steps.containerfiles.outputs.images }}
+#
+#       - name: Generate SLSA Provenance
+#         id: provenance
+#         uses: slsa-framework/slsa-verifier/actions/installer@v2.6.0
+#         with:
+#           containerfiles: ${{ steps.containerfiles.outputs.files }}
+#           platform: ${{ matrix.platform }}
+#
+#       - name: Upload Provenance
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: slsa-provenance-${{ matrix.platform }}
+#           path: ${{ steps.provenance.outputs.provenance-dir }}
+#           retention-days: 90
+#
+#       - name: Attest Provenance
+#         run: |
+#           for image in ${{ steps.containerfiles.outputs.images }}; do
+#             image_name=$(echo "$image" | rev | cut -d/ -f1 | rev | cut -d: -f1)
+#             provenance_file="${{ steps.provenance.outputs.provenance-dir }}/${image_name}-provenance.json"
+#             if [ -f "$provenance_file" ]; then
+#               cosign attest --yes --predicate "$provenance_file" "$image"
+#             fi
+#           done
+#
+#       - name: Generate SBOM
+#         uses: anchore/sbom-action@v0
+#         with:
+#           image: ${{ steps.containerfiles.outputs.images }}
+#           format: spdx-json
+#           artifact-name: sbom.spdx.json
+#
+#       - name: Sign SBOM
+#         run: |
+#           sbom_file="${{ steps.sbom.outputs.artifact-path }}"
+#           if [ -f "$sbom_file" ]; then
+#             cosign sign --yes --predicate "$sbom_file" "${{ steps.containerfiles.outputs.images }}"
+#           fi
+#
+#       - name: Upload SBOM
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: sbom-${{ matrix.platform }}
+#           path: ${{ steps.sbom.outputs.artifact-path }}
+#           retention-days: 90
+#
+#       - name: Move cache
+#         run: |
+#           rm -rf /tmp/.buildx-cache
+#           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
