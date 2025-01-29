@@ -13,5 +13,7 @@ perl-Image-ExifTool ImageMagick
 pip poetry
 rust cargo
 usbutils
-xorriso
+xorriso cloud-utils
+unzip
+libicu
 jq yq
