@@ -56,7 +56,7 @@ jobs:
 
       - name: Find Containerfiles
         id: containerfiles
-        uses: .github/actions/find-containerfiles
+        uses: ./.github/actions/find-containerfiles
 
       - name: Build and Sign Containers
         uses: docker/bake-action@v4
