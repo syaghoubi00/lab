@@ -1,0 +1,20 @@
+name: Build Containers
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "containers/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "containers/**"
+  schedule:
+    - cron: "0 0 * * 0" # Weekly on Sundays at midnight
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: .github/workflows/container-build.yaml
+    with:
+      platforms: '["linux/amd64"]'

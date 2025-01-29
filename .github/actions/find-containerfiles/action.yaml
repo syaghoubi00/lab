@@ -1,0 +1,62 @@
+name: "Find Containerfiles"
+description: "Finds all Containerfiles and generates Docker Bake file"
+
+outputs:
+  files:
+    description: "Found Containerfile paths"
+    value: ${{ steps.find-containers.outputs.files }}
+  images:
+    description: "Container image names"
+    value: ${{ steps.find-containers.outputs.images }}
+  bake-file:
+    description: "Generated Docker Bake file"
+    value: ${{ steps.find-containers.outputs.bake-file }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: find-containers
+      shell: bash
+      run: |
+        # Create temporary bake file
+        bake_file="/tmp/docker-bake.hcl"
+        echo "group \"default\" {" > "$bake_file"
+        echo "  targets = [" >> "$bake_file"
+
+        files=()
+        images=()
+
+        while IFS= read -r containerfile; do
+          # Parse path components
+          dir_path=$(dirname "$containerfile" | sed 's|containers/||')
+          parent_dir=$(echo "$dir_path" | cut -d'/' -f1)
+          app_name=$(echo "$dir_path" | cut -d'/' -f2)
+          tag_name=$(echo "$dir_path" | cut -d'/' -f3)
+
+          # Create image name: boxes-fedora:latest
+          image_name="${parent_dir}-${app_name}"
+
+          files+=("$containerfile")
+          images+=("ghcr.io/${{ github.repository_owner }}/${image_name}:${tag_name}")
+
+          # Add target to bake file
+          echo "    \"${image_name}-${tag_name}\"," >> "$bake_file"
+
+          # Add target definition
+          cat >> "$bake_file" <<EOF
+
+          target "${image_name}-${tag_name}" {
+            dockerfile = "$containerfile"
+            context = "$(dirname "$containerfile")"
+            tags = ["ghcr.io/${{ github.repository_owner }}/${image_name}:${tag_name}"]
+          }
+          EOF
+        done < <(find containers -name "Containerfile" -type f)
+
+        echo "  ]" >> "$bake_file"
+        echo "}" >> "$bake_file"
+
+        # Set outputs
+        echo "files=${files[*]}" >> $GITHUB_OUTPUT
+        echo "images=${images[*]}" >> $GITHUB_OUTPUT
+        echo "bake-file=$bake_file" >> $GITHUB_OUTPUT
