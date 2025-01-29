@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "containers/**"
+      - ".github/workflows/update-dependabot.yaml"
 jobs:
   update-dependabot:
     runs-on: ubuntu-latest
