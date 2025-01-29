@@ -19,10 +19,10 @@ jobs:
     strategy:
       matrix:
         platform: ${{ fromJson(inputs.platforms) }}
-    permissions:
-      contents: read
-      packages: write
-      # id-token: write
+    # permissions:
+    #   contents: read
+    #   packages: write
+    #   id-token: write
     outputs:
       # provenance-paths: ${{ steps.provenance.outputs.paths }}
       build-status: ${{ steps.build-containers.outputs.build-status }}
