@@ -50,14 +50,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ matrix.platform }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-${{ github.sha }}-
-            ${{ runner.os }}-buildx-
+      # - name: Cache Docker layers
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: /tmp/.buildx-cache
+      #     key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ matrix.platform }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-buildx-${{ github.sha }}-
+      #       ${{ runner.os }}-buildx-
 
       - name: Find Containerfiles
         id: containerfiles
@@ -73,8 +73,8 @@ jobs:
           provenance: mode=max
           set: |
             *.platform=${{ matrix.platform }}
-            *.cache-from=type=local,src=/tmp/.buildx-cache
-            *.cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
 
       # - name: Sign Images and Attestations
       #   if: success()
