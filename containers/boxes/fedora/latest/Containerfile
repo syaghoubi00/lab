@@ -10,6 +10,12 @@ COPY etc/dnf/dnf.conf /etc/dnf/dnf.conf
 # Install everything in package-list
 RUN dnf install -y $(cat /tmp/package-list) && dnf clean all
 
+# Inatall gh-cli
+RUN dnf install -y dnf5-plugins && \
+  dnf config-manager addrepo --from-repofile=https://cli.github.com/packages/rpm/gh-cli.repo && \
+  dnf install -y gh --repo gh-cli && \
+  dnf clean all
+
 # Switched to container
 # RUN python3 -m pip --no-cache-dir install molecule molecule-plugins ansible-dev-tools
 
