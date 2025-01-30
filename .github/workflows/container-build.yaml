@@ -70,8 +70,8 @@ jobs:
           files: ${{ steps.containerfiles.outputs.bake-file }}
           push: true
           sbom: true
+          provenance: mode=max
           set: |
-            *.attest=type=provenance=mode=max
             *.platform=${{ matrix.platform }}
             *.cache-from=type=local,src=/tmp/.buildx-cache
             *.cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max
