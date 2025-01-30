@@ -1,6 +1,7 @@
 FROM registry.fedoraproject.org/fedora:latest
 
 LABEL com.github.containers.toolbox="true"
+LABEL org.opencontainers.image.description "Development Toolbox"
 
 COPY package-list /tmp/package-list
 
