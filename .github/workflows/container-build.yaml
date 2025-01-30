@@ -71,7 +71,7 @@ jobs:
           push: true
           sbom: true
           set: |
-            *.attest=type=provenance=max
+            *.attest=type=provenance=mode=max
             *.platform=${{ matrix.platform }}
             *.cache-from=type=local,src=/tmp/.buildx-cache
             *.cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max
