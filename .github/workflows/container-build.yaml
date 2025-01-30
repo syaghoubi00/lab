@@ -14,8 +14,6 @@ on:
       build-status:
         description: "Status of container builds"
         value: ${{ jobs.build.outputs.build-status }}
-      sbom-status:
-        description: "Status of SBOM generation"
 
 jobs:
   build:
