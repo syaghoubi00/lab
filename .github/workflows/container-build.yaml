@@ -50,15 +50,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Find Containerfiles
-        id: containerfiles
-        uses: ./.github/actions/find-containerfiles
+      - name: Build Bake File
+        id: bake-file
+        uses: ./.github/actions/build-bake-file
 
       - name: Build and Push Containers
         id: build-containers
         uses: docker/bake-action@v5
         with:
-          files: ${{ steps.containerfiles.outputs.bake-file }}
+          files: ${{ steps.bake-file.outputs.bake-file }}
           push: true
           sbom: true
           provenance: mode=max
