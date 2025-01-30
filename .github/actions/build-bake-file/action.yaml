@@ -1,4 +1,4 @@
-name: "Find Containerfiles"
+name: "Build a Bake file from Containerfiles"
 description: "Finds all Containerfiles and generates Docker Bake file"
 
 outputs:
