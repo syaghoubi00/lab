@@ -1,0 +1,42 @@
+; Zone file for internal.zags.dev
+; Last updated: 2024-01-05
+$TTL    86400    ; 24 hours default TTL
+
+; Start of Authority
+@       IN      SOA     ns1.internal.zags.dev. admin.internal.zags.dev. (
+                        2024010501  ; Serial (YYYYMMDDNN format)
+                        3600        ; Refresh (1 hours)
+                        1800        ; Retry (30 minutes)
+                        604800      ; Expire (1 weeks)
+                        3600        ; Negative Cache TTL (1 hour)
+)
+
+; Nameservers
+@       IN      NS      ns1.internal.zags.dev.  ; Primary nameserver
+@       IN      NS      ns2.internal.zags.dev.  ; Secondary nameserver for redundancy
+
+; Nameserver A records
+ns1     IN      A       10.11.14.50
+ns2     IN      A       10.11.14.51   ; Ideally on a different server
+
+; Zone apex records
+@       IN      A       10.11.14.50             ; A record for the zone apex (internal.zags.dev itself)
+;@       IN      AAAA    fd00:dead:beef::50      ; IPv6 support
+;@       IN      TXT     "v=spf1 -all"           ; SPF record (deny all mail)
+
+; Common service records
+;www     IN      A       10.11.14.50
+;api     IN      A       10.11.14.50
+;dev     IN      A       10.11.14.50
+
+; Development environment subdomains
+;*.dev   IN      A       10.11.14.50    ; All dev.internal.zags.dev subdomains
+;*.test  IN      A       10.11.14.50    ; All test.internal.zags.dev subdomains
+;*.stage IN      A       10.11.14.50    ; All stage.internal.zags.dev subdomains
+
+; General wildcard (lowest priority due to DNS matching rules)
+*       IN      A       10.11.14.50    ; Catch-all for other subdomains
+
+; Service discovery (optional, for internal services)
+;_ldap._tcp      IN      SRV     0 0 389    ldap.internal.zags.dev.
+;_kerberos._udp  IN      SRV     0 0 88     kdc.internal.zags.dev.
