@@ -109,7 +109,7 @@ jobs:
                   --arg tag "$tag" \
                   --arg context "$context_dir" \
                   '{file: $file, app: $app, tag: $tag, context: $context}'
-              done | jq -s '.'
+              done | jq -s -c '.'
           )
 
           if [ "$matrix" = "[]" ] || [ -z "$matrix" ]; then
