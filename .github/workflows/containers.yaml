@@ -132,7 +132,9 @@ jobs:
     permissions:
       contents: read
       packages: write
-      security-events: write
+      security-events: write # Uploading SARIF files
+      id-token: write # Signing
+      attestations: write # Uploading attestations
     strategy:
       fail-fast: false # Allow other containers to build if one fails
       matrix:
@@ -269,6 +271,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Attest Container Build
+        id: attest
+        uses: actions/attest-build-provenance@v2.2.0
+        with:
+          subject-name: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
+          subject-digest: ${{ steps.build-and-push.outputs.digest }}
+          push-to-registry: true
+          show-summary: true
+
       - name: Build Summary
         if: always()
         run: |
@@ -286,4 +297,5 @@ jobs:
             echo "| Trivy | \`${{ steps.trivy-scan.outcome }}\` |"
             echo "| Upload SARIF | \`${{ steps.upload-sarif.outcome }}\` |"
             echo "| Push | \`${{ steps.build-and-push.outcome }}\` |"
+            echo "| Attest | \`${{ steps.attest.outcome }}\` |"
           } >> $GITHUB_STEP_SUMMARY
