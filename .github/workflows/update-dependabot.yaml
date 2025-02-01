@@ -1,3 +1,5 @@
+# TODO: Put common options into a config that is added to
+# should be easy with something like yq
 name: Update Dependabot Config
 
 on:
@@ -21,6 +23,8 @@ jobs:
             # GitHub Actions updates
             - package-ecosystem: "github-actions"
               directory: "/"
+              reviewers: 
+                - "syaghoubi00"
               schedule:
                 interval: "daily"
                 timezone: "Etc/UTC"
@@ -55,6 +59,8 @@ jobs:
             # Docker container updates for $dir
             - package-ecosystem: "docker"
               directory: "/$dir"
+              reviewers: 
+                - "syaghoubi00"
               schedule:
                 interval: "daily"
                 timezone: "Etc/UTC"
