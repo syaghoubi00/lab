@@ -22,23 +22,20 @@ jobs:
             - package-ecosystem: "github-actions"
               directory: "/"
               schedule:
-                interval: "weekly"
-                day: "monday"
-                time: "09:00"
+                interval: "daily"
                 timezone: "Etc/UTC"
               groups:
                 # Group GitHub Actions by functionality
-                testing-actions:
+                github-actions:
                   patterns:
-                    - "actions/checkout*"
-                    - "actions/setup-*"
+                    - "actions/*"
                   update-types:
                     - "minor"
                     - "patch"
                 security-actions:
                   patterns:
                     - "*trivy*"
-                    - "*snyk*"
+                    - "*anchore*"
                     - "*codeql*"
                 docker-actions:
                   patterns:
@@ -59,9 +56,7 @@ jobs:
             - package-ecosystem: "docker"
               directory: "/$dir"
               schedule:
-                interval: "weekly"
-                day: "monday"
-                time: "09:00"
+                interval: "daily"
                 timezone: "Etc/UTC"
               groups:
                 containers:
@@ -70,7 +65,7 @@ jobs:
               commit-message:
                 prefix: "chore"
                 include: "scope"
-              open-pull-requests-limit: 10
+              open-pull-requests-limit: 5
           EOF
           done
 
