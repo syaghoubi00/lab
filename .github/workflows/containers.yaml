@@ -130,7 +130,7 @@ jobs:
     needs: prepare-matrix
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write # Upload SBOM (Trivy)
       packages: write
       security-events: write # Uploading SARIF files
       id-token: write # Signing
