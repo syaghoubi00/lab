@@ -1,0 +1,243 @@
+name: Build Containers
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "containers/**"
+    tags:
+      # NOTE: Only trigger on patch push.tags events
+      # so when pushing vX, vX.X, and vX.X.X
+      # the workflow doesn't get triggered 3 times
+      - "v*.*.*"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "containers/**"
+  schedule:
+    - cron: "0 0 * * 0" # Weekly on Sundays at midnight
+  workflow_dispatch:
+
+jobs:
+  prepare-matrix:
+    permissions:
+      contents: read # For checkout
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    env:
+      # If apps are stored in a directory, such as './containers/app{1..}'
+      CONTAINERS_DIR: "containers"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Build Containerfile Matrix
+        id: set-matrix
+        shell: bash
+        run: |
+          # Find all container files and create matrix
+          matrix=$(find "${CONTAINERS_DIR:-.}" -type f \( -name "Containerfile" -o -name "Dockerfile" \) |
+            jq -R -s -c --arg repo "${GITHUB_REPOSITORY#*/}" '
+            split("\n")[:-1] | map({
+              file: .,  # e.g., "./containers/app1/Containerfile" or "./Dockerfile"
+              app: (
+                # For "./Dockerfile" -> use repo name
+                if split("/") | length <= 2 then $repo
+                else
+                  # For "./containers/app1/Containerfile" -> "app1"
+                  # For "./app1/Containerfile" -> "app1"
+                  split("/")[1]
+                end
+              ),
+              tag: (
+                # For "./Dockerfile" or "./app1/Containerfile" -> "latest"
+                if split("/") | length <= 3 then
+                  "latest"
+                else
+                  # For "./app2/v2/Dockerfile" -> "v2"
+                  # For "./containers/app2/v3/Dockerfile" -> "v3"
+                  split("/")[-2]
+                end
+              ),
+              context: (
+                # Removes last segment (filename) and rejoins
+                # "./containers/app1/Containerfile" -> "./containers/app1"
+                # "./Dockerfile" -> "."
+                split("/")[:-1] | join("/")
+              )
+            })
+          ')
+
+          if [ "$matrix" = "[]" ] || [ -z "$matrix" ]; then
+            echo "::error::No container files found in:"
+            echo "::error::  - ${CONTAINERS_DIR}/**/Dockerfile"
+            echo "::error::  - ${CONTAINERS_DIR}/**/Containerfile"
+            echo "::error::Please ensure container files exist and are properly formatted"
+            exit 1
+          fi
+
+          # Print matrix for debugging
+          echo "$matrix"
+
+          echo "matrix=${matrix}" >> $GITHUB_OUTPUT
+
+  build:
+    timeout-minutes: 60
+    needs: prepare-matrix
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    strategy:
+      matrix:
+        container: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ matrix.container.app }}
+      cancel-in-progress: true
+    env:
+      # CSV List of platforms to build for
+      PLATFORMS: linux/amd64
+      CONTAINER_REGISTRY: "ghcr.io"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Generate Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5.6.1
+        with:
+          images: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
+          flavor: |
+            latest=auto
+          tags: |
+            type=raw,value=${{ matrix.container.tag }}
+            type=schedule,pattern=nightly
+            type=schedule
+            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}.{{minor}}.{{patch}}
+            type=edge
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha
+          labels: |
+            org.opencontainers.image.title=${{ matrix.container.app }}
+            org.opencontainers.image.version=${{ matrix.container.tag }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            com.github.repo=${{ github.repository }}
+            com.github.ref=${{ github.ref }}
+            com.github.workflow=${{ github.workflow }}
+            build.repository=${{ github.repository }}
+            build.branch=${{ github.ref_name }}
+            build.commit=${{ github.sha }}
+            build.version=${{ matrix.container.tag }}
+            build.context=${{ matrix.container.context }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.8.0
+        with:
+          platforms: ${{ env.PLATFORMS }}
+
+      - name: Export Container for Scanning
+        id: export-container
+        uses: docker/build-push-action@v6.13.0
+        with:
+          context: ${{ github.workspace }}/${{ matrix.container.context }}
+          file: ${{ github.workspace }}/${{ matrix.container.file }}
+          platforms: linux/amd64 # Only build single platform for scanning
+          load: true # Load into docker daemon
+          # NOTE: Don't use ${{ steps.meta.outputs.tags }} because it includes the registry,
+          # which was breaking the Trivy scan.
+          tags: ${{ matrix.container.app }}:${{ matrix.container.tag }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+        env:
+          # Reproducible builds
+          # NOTE: Can also use the git commit date,
+          # but it requires an extra step.
+          SOURCE_DATE_EPOCH: 0
+
+      - name: Run Anchore (Grype) Vulnerability Scanner
+        id: anchore-scan
+        if: steps.export-container.outcome == 'success'
+        uses: anchore/scan-action@v6.1.0
+        with:
+          image: ${{ matrix.container.app }}:${{ matrix.container.tag }}
+          fail-build: true # Fail if vulnerabilities found
+          severity-cutoff: critical
+          only-fixed: false # Only report vulnerabilities that have a fix available
+          output-file: "sarif-results/grype.sarif"
+          output-format: "sarif"
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@0.29.0
+        id: trivy-scan
+        if: steps.export-container.outcome == 'success'
+        with:
+          scan-type: image
+          image-ref: ${{ matrix.container.app }}:${{ matrix.container.tag }}
+          format: "sarif"
+          output: "sarif-results/trivy.sarif"
+          severity: "CRITICAL,HIGH"
+          scanners: "vuln,secret"
+          timeout: "10m"
+          # ignore-unfixed: true
+          # exit-code: "1"  # Fail if vulnerabilities found
+
+      # Upload the scan results
+      - name: Upload SARIF Results
+        id: upload-sarif
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3.28.8
+        with:
+          sarif_file: sarif-results/
+          category: "container-security-${{ matrix.container.app }}-${{ matrix.container.tag }}"
+
+      - name: Log in to the Container Registry
+        uses: docker/login-action@v3.3.0
+        if: github.event_name != 'pull_request'
+        with:
+          registry: ${{ env.CONTAINER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Push the image if scans pass, and build other platforms if specified
+      - name: Build and Push Containers
+        uses: docker/build-push-action@v6.13.0
+        id: build-and-push
+        if: |
+          github.event_name != 'pull_request' &&
+          steps.export-container.outcome == 'success' &&
+          steps.anchore-scan.outcome == 'success' &&
+          steps.trivy-scan.outcome == 'success'
+        with:
+          context: ${{ github.workspace }}/${{ matrix.container.context }}
+          file: ${{ github.workspace }}/${{ matrix.container.file }}
+          platforms: ${{ env.PLATFORMS }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Summary
+        if: always()
+        run: |
+          {
+            echo "### 🐳 Container Build Report: ${{ matrix.container.app }}:${{ matrix.container.tag }}"
+            echo "#### Build Details"
+            echo "- **Container**: \`${{ matrix.container.app }}\`"
+            echo "- **Tag**: \`${{ matrix.container.tag }}\`"
+            echo "- **Context**: \`${{ matrix.container.context }}\`"
+            echo ""
+            echo "| Step | Status |"
+            echo "|------|--------|"
+            echo "| Build | \`${{ steps.export-container.outcome }}\` |"
+            echo "| Anchore | \`${{ steps.anchore-scan.outcome }}\` |"
+            echo "| Trivy | \`${{ steps.trivy-scan.outcome }}\` |"
+            echo "| Upload SARIF | \`${{ steps.upload-sarif.outcome }}\` |"
+            echo "| Push | \`${{ steps.build-and-push.outcome }}\` |"
+          } >> $GITHUB_STEP_SUMMARY
