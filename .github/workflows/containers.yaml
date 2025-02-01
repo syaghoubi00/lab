@@ -304,6 +304,7 @@ jobs:
 
       - name: Attest Container Build
         id: attest
+        if: steps.build-and-push.outcome == 'success'
         uses: actions/attest-build-provenance@v2.2.0
         with:
           subject-name: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
