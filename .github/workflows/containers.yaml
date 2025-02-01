@@ -253,6 +253,8 @@ jobs:
           # exit-code: "1"  # Fail if vulnerabilities found
 
       # Upload the scan results
+      # NOTE: Results are uploaded for PR's - change always()?
+      # uploading PR scans doesn't represent actual repo
       - name: Upload SARIF Results
         id: upload-sarif
         if: always()
