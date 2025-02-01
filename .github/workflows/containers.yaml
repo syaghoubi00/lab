@@ -148,6 +148,8 @@ jobs:
           file: ${{ github.workspace }}/${{ matrix.container.file }}
           platforms: linux/amd64 # Only build single platform for scanning
           load: true # Load into docker daemon
+          sbom: true
+          provenance: mode=max
           # NOTE: Don't use ${{ steps.meta.outputs.tags }} because it includes the registry,
           # which was breaking the Trivy scan.
           tags: ${{ matrix.container.app }}:${{ matrix.container.tag }}
@@ -217,6 +219,8 @@ jobs:
           context: ${{ github.workspace }}/${{ matrix.container.context }}
           file: ${{ github.workspace }}/${{ matrix.container.file }}
           platforms: ${{ env.PLATFORMS }}
+          sbom: true
+          provenance: mode=max
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
