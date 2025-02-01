@@ -298,7 +298,7 @@ jobs:
         if: steps.build-and-push.outcome == 'success'
         with:
           scan-type: "image"
-          image-ref: ${{ steps.meta.output.tags }}
+          image-ref: ${{ steps.meta.outputs.tags }}
           # image-ref: ${{ matrix.container.app }}:${{ matrix.container.tag }}
           format: "github"
           output: "dependency-results.sbom.json"
