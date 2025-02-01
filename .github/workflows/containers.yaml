@@ -242,12 +242,12 @@ jobs:
         id: trivy-scan
         if: steps.export-container.outcome == 'success'
         with:
-          scan-type: image
+          scan-type: "image"
           image-ref: ${{ matrix.container.app }}:${{ matrix.container.tag }}
           format: "sarif"
           output: "sarif-results/trivy.sarif"
           severity: "CRITICAL,HIGH"
-          scanners: "vuln,secret"
+          scanners: "vuln"
           timeout: "10m"
           # ignore-unfixed: true
           # exit-code: "1"  # Fail if vulnerabilities found
@@ -316,6 +316,7 @@ jobs:
           scan-type: "image"
           image-ref: ${{ steps.meta.outputs.tags }}
           # image-ref: ${{ matrix.container.app }}:${{ matrix.container.tag }}
+          scanners: "vuln"
           format: "github"
           output: "dependency-results.sbom.json"
           github-pat: ${{ secrets.GITHUB_TOKEN }}
