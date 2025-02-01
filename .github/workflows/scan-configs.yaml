@@ -5,6 +5,9 @@ on:
   pull_request:
 jobs:
   configs:
+    permissions:
+      contents: read # To checkout and read repository
+      security-events: write # To upload to security tab
     name: Scan Configs
     runs-on: ubuntu-latest
     steps:
