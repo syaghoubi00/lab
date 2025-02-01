@@ -134,6 +134,7 @@ jobs:
       packages: write
       security-events: write
     strategy:
+      fail-fast: false # Allow other containers to build if one fails
       matrix:
         container: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
     concurrency:
