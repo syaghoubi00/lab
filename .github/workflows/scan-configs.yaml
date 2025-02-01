@@ -23,6 +23,9 @@ jobs:
           output: "trivy-results.sarif"
           exit-code: "1"
           severity: "CRITICAL,HIGH,MEDIUM"
+          # NOTE: By default SARIF format enforces output of
+          # all vulnerabilities regardless of configured severities.
+          limit-severities-for-sarif: true
 
       - name: Upload Trivy Scan Results to GitHub Security Tab
         if: always()
