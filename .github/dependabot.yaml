@@ -4,23 +4,20 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
+      interval: "daily"
       timezone: "Etc/UTC"
     groups:
       # Group GitHub Actions by functionality
-      testing-actions:
+      github-actions:
         patterns:
-          - "actions/checkout*"
-          - "actions/setup-*"
+          - "actions/*"
         update-types:
           - "minor"
           - "patch"
       security-actions:
         patterns:
           - "*trivy*"
-          - "*snyk*"
+          - "*anchore*"
           - "*codeql*"
       docker-actions:
         patterns:
@@ -36,9 +33,7 @@ updates:
   - package-ecosystem: "docker"
     directory: "/containers/boxes/fedora/latest"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
+      interval: "daily"
       timezone: "Etc/UTC"
     groups:
       containers:
@@ -47,15 +42,13 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
 
   # Docker container updates for containers/ansible-dev-tools
   - package-ecosystem: "docker"
     directory: "/containers/ansible-dev-tools"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
+      interval: "daily"
       timezone: "Etc/UTC"
     groups:
       containers:
@@ -64,4 +57,4 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
