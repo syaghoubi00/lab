@@ -332,8 +332,8 @@ jobs:
         if: always()
         run: |
           {
-            echo "### 🐳 Container Build Report: ${{ matrix.container.app }}:${{ matrix.container.tag }}"
-            echo "#### Build Details"
+            echo "## Job Summary: ${{ matrix.container.app }}:${{ matrix.container.tag }}"
+            echo "### Build Details"
             echo "- **Container**: \`${{ matrix.container.app }}\`"
             echo "- **Tag**: \`${{ matrix.container.tag }}\`"
             echo "- **Context**: \`${{ matrix.container.context }}\`"
