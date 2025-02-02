@@ -143,6 +143,7 @@ jobs:
       #     summary: true
       #     format: list
 
+      # Security 'Gate' - fail all images with critical vulns
       - name: Run Anchore (Grype) Vulnerability Scanner
         uses: anchore/scan-action@v6.1.0
         id: anchore-scan
@@ -155,6 +156,8 @@ jobs:
           output-file: "sarif-results/grype.sarif"
           output-format: "sarif"
 
+      # Run additional scan for defense-in-depth approach
+      # NOTE: Doesn't fail if vulns are found - they are only reported
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@0.29.0
         id: trivy-scan
@@ -164,7 +167,7 @@ jobs:
           image-ref: ${{ matrix.container.app }}:${{ matrix.container.tag }}
           format: "sarif"
           output: "sarif-results/trivy.sarif"
-          severity: "CRITICAL,HIGH"
+          severity: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL" # SARIF automatically exports all severities
           scanners: "vuln"
           # ignore-unfixed: true
           # exit-code: "1"  # Fail if vulnerabilities found
@@ -178,7 +181,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Push the image if scans pass, and build other platforms if specified
+      # Push the image if scans pass and not a PR
+      # build other platforms if specified
+      # add attestations
       - name: Build and Push Containers
         uses: docker/build-push-action@v6.13.0
         id: build-and-push
@@ -214,7 +219,7 @@ jobs:
           done
           cosign sign --yes ${images}
 
-      - name: Run Trivy in GitHub SBOM Mode and Submit Results to Dependency Graph
+      - name: Upload - SBOM to Dependency Graph
         uses: aquasecurity/trivy-action@0.29.0
         id: sbom-upload
         if: ${{ github.event_name != 'pull_request' }}
@@ -227,7 +232,7 @@ jobs:
           output: "dependency-results.sbom.json"
           github-pat: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Attest Container Build
+      - name: Upload - SLSA Build Provenance
         uses: actions/attest-build-provenance@v2.2.0
         id: attest
         if: ${{ github.event_name != 'pull_request' }}
@@ -239,7 +244,7 @@ jobs:
           show-summary: true
 
       # Upload the scan results
-      - name: Upload SARIF Results
+      - name: Upload - SARIF Results
         uses: github/codeql-action/upload-sarif@v3.28.8
         id: upload-sarif
         if: ${{ github.event_name != 'pull_request' }}
