@@ -1,5 +1,6 @@
-# TODO: Migrate to a collection with all the homelab roles?
----
+collections:
+  - name: syaghoubi00.homelab
+    version: ">1.0.0,<2.0.0"
 roles:
   - name: coredns
     src: https://github.com/syaghoubi00/ansible-role-coredns
