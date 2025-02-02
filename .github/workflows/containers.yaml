@@ -346,6 +346,6 @@ jobs:
             echo "| Trivy | \`${{ steps.trivy-scan.outcome }}\` |"
             echo "| Upload SARIF | \`${{ steps.upload-sarif.outcome }}\` |"
             echo "| Push | \`${{ steps.build-and-push.outcome }}\` |"
-            echo "| Upload SBOM | \`${{ steps.sbom.outcome }}\` |"
+            echo "| Upload SBOM | \`${{ steps.sbom-upload.outcome }}\` |"
             echo "| Attest | \`${{ steps.attest.outcome }}\` |"
           } >> $GITHUB_STEP_SUMMARY
