@@ -150,10 +150,12 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4.2.2
+        timeout-minutes: 1
 
       - name: Generate Docker Metadata
-        id: meta
         uses: docker/metadata-action@v5.6.1
+        id: meta
+        timeout-minutes: 3
         with:
           images: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
           flavor: |
@@ -184,12 +186,14 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3.8.0
+        timeout-minutes: 3
         with:
           platforms: ${{ env.PLATFORMS }}
 
       - name: Export Container for Scanning
-        id: export-container
         uses: docker/build-push-action@v6.13.0
+        id: export-container
+        timeout-minutes: 10
         with:
           context: ${{ github.workspace }}/${{ matrix.container.context }}
           file: ${{ github.workspace }}/${{ matrix.container.file }}
@@ -226,9 +230,10 @@ jobs:
       #     format: list
 
       - name: Run Anchore (Grype) Vulnerability Scanner
+        uses: anchore/scan-action@v6.1.0
         id: anchore-scan
         if: steps.export-container.outcome == 'success'
-        uses: anchore/scan-action@v6.1.0
+        timeout-minutes: 5
         with:
           image: ${{ matrix.container.app }}:${{ matrix.container.tag }}
           fail-build: true # Fail if vulnerabilities found
@@ -241,6 +246,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.29.0
         id: trivy-scan
         if: steps.export-container.outcome == 'success'
+        timeout-minutes: 5
         with:
           scan-type: "image"
           image-ref: ${{ matrix.container.app }}:${{ matrix.container.tag }}
@@ -248,13 +254,13 @@ jobs:
           output: "sarif-results/trivy.sarif"
           severity: "CRITICAL,HIGH"
           scanners: "vuln"
-          timeout: "10m"
           # ignore-unfixed: true
           # exit-code: "1"  # Fail if vulnerabilities found
 
       - name: Log in to the Container Registry
         uses: docker/login-action@v3.3.0
         if: github.event_name != 'pull_request'
+        timeout-minutes: 1
         with:
           registry: ${{ env.CONTAINER_REGISTRY }}
           username: ${{ github.actor }}
@@ -269,6 +275,7 @@ jobs:
           steps.export-container.outcome == 'success' &&
           steps.anchore-scan.outcome == 'success' &&
           steps.trivy-scan.outcome == 'success'
+        timeout-minutes: 10
         with:
           context: ${{ github.workspace }}/${{ matrix.container.context }}
           file: ${{ github.workspace }}/${{ matrix.container.file }}
@@ -284,9 +291,11 @@ jobs:
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3.7.0
         if: steps.build-and-push.outcome == 'success'
+        timeout-minutes: 1
       - name: Sign the images with GitHub OIDC Token
         id: cosign
         if: steps.build-and-push.outcome == 'success'
+        timeout-minutes: 3
         env:
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
           TAGS: ${{ steps.meta.outputs.tags }}
@@ -301,6 +310,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.29.0
         id: sbom-upload
         if: steps.build-and-push.outcome == 'success'
+        timeout-minutes: 5
         with:
           scan-type: "image"
           scanners: "vuln"
@@ -310,9 +320,10 @@ jobs:
           github-pat: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Attest Container Build
+        uses: actions/attest-build-provenance@v2.2.0
         id: attest
         if: steps.build-and-push.outcome == 'success'
-        uses: actions/attest-build-provenance@v2.2.0
+        timeout-minutes: 5
         with:
           subject-name: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
           subject-digest: ${{ steps.build-and-push.outputs.digest }}
@@ -321,9 +332,10 @@ jobs:
 
       # Upload the scan results
       - name: Upload SARIF Results
+        uses: github/codeql-action/upload-sarif@v3.28.8
         id: upload-sarif
         if: steps.build-and-push.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@v3.28.8
+        timeout-minutes: 2
         with:
           sarif_file: sarif-results/
           category: "container-security-${{ matrix.container.app }}-${{ matrix.container.tag }}"
