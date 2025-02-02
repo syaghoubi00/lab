@@ -26,5 +26,6 @@ A collection of things I use for my homelab infrastructure as code
   - Thoughts: Remove push/pull paths in main build-containers workflow and create
     a separate workflow for on changes
 
-- Multiple images are getting pushed to `ghcr`, with an `unknown/unknown` platform
-  - need to find out why and fix
+- perf: instead of scanning the image - build the sbom that can be reused
+
+- chore(ci.containers): separate pr scanning and release build/scans
