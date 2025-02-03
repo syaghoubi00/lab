@@ -11,8 +11,6 @@ import argparse
 import logging
 import re
 import sys
-import os
-
 from pathlib import Path
 from uuid import uuid4
 
