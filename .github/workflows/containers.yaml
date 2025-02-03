@@ -71,7 +71,10 @@ jobs:
         id: meta
         timeout-minutes: 3
         with:
-          images: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
+          # NOTE: Can push to multiple registries by adding them here -
+          # will need to add another step to login into the other container registry
+          images: |
+            ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
           flavor: |
             latest=auto
           tags: |
