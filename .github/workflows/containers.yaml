@@ -236,11 +236,12 @@ jobs:
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          images=""
-          for tag in ${TAGS}; do
-            images+="${tag}@${DIGEST} "
+          for image in ${TAGS}; do
+            cosign verify \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity ${{ github.server_url }}/${{ github.workflow_ref }} \
+            ${image}@${DIGEST}
           done
-          cosign verify ${images}
 
       - name: Upload - SBOM to Dependency Graph
         uses: aquasecurity/trivy-action@0.29.0
