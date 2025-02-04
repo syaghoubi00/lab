@@ -8,6 +8,7 @@ versions of packages in DNF repositories.
 from __future__ import annotations
 
 import argparse
+import difflib
 import logging
 import re
 import sys
@@ -206,14 +207,22 @@ def process_container_file(file_path: Path, pattern: str) -> None:
             new_package = f"{package_name}-{new_version}"
             updated_content = updated_content.replace(old_package, new_package)
 
+    diff = difflib.unified_diff(
+        content.splitlines(keepends=True),
+        updated_content.splitlines(keepends=True),
+        fromfile=f"{file_path} (old)",
+        tofile=f"{file_path} (new)",
+    )
+
     if updated_content != content:
+        logger.info(diff)
         if not args.no_prompt and sys.stdin.isatty():
             response = input(f"Update {file_path}? (y/N): ").strip().lower()
             if response != "y":
                 logger.info("Skipping update for %s", file_path)
                 return
         file_path.write_text(updated_content)
-        logger.info("Updated %s: %s", file_path, updated_content)
+        logger.info("Updated %s: ", file_path)
 
 
 def update_container_files(search_path: Path | None = None) -> None:
