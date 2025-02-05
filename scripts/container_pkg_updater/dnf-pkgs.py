@@ -15,10 +15,18 @@ import sys
 from pathlib import Path
 from uuid import uuid4
 
-import dnf
-import dnf.exceptions
-import dnf.repo
-import dnf.repodict
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    import dnf
+    import dnf.exceptions
+    import dnf.repo
+    import dnf.repodict
+except ImportError:
+    logger.exception(
+        "DNF Python bindings are not installed. Install with 'dnf install python3-dnf'",
+    )
 
 CONTAINER_FILE_PATTERNS = ["Containerfile", "Dockerfile"]
 REQUEST_TIMEOUT = 10  # seconds
@@ -45,9 +53,6 @@ DISTRO_CONFIGS = {
         "release_prefix": "el",
     },
 }
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 def extract_base_image_info(content: str) -> tuple[str, str]:
