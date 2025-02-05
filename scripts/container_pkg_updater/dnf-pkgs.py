@@ -207,15 +207,17 @@ def process_container_file(file_path: Path, pattern: str) -> None:
             new_package = f"{package_name}-{new_version}"
             updated_content = updated_content.replace(old_package, new_package)
 
-    diff = difflib.unified_diff(
-        content.splitlines(keepends=True),
-        updated_content.splitlines(keepends=True),
-        fromfile=f"{file_path} (old)",
-        tofile=f"{file_path} (new)",
+    diff = "".join(
+        difflib.unified_diff(
+            content.splitlines(keepends=True),
+            updated_content.splitlines(keepends=True),
+            fromfile=f"{file_path} (old)",
+            tofile=f"{file_path} (new)",
+        ),
     )
 
     if updated_content != content:
-        logger.info(diff)
+        logger.info("\n%s", diff)
         if not args.no_prompt and sys.stdin.isatty():
             response = input(f"Update {file_path}? (y/N): ").strip().lower()
             if response != "y":
