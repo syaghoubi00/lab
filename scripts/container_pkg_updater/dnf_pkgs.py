@@ -27,6 +27,7 @@ except ImportError:
     logger.exception(
         "DNF Python bindings are not installed. Install with 'dnf install python3-dnf'",
     )
+    sys.exit(1)
 
 CONTAINER_FILE_PATTERNS = ["Containerfile", "Dockerfile"]
 REQUEST_TIMEOUT = 10  # seconds
