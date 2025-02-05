@@ -159,13 +159,17 @@ def get_latest_package_version(
         if base.repos is not None and temp_repo_id in base.repos:
             try:
                 base.repos[temp_repo_id].disable()
+                base.repos.pop(temp_repo_id, None)
             except dnf.exceptions.RepoError as e:
                 logger.warning(
                     "Failed to remove temporary repository %s: %s",
                     temp_repo_id,
                     str(e),
                 )
-        base.close()  # Clean up DNF resources
+        try:
+            base.close()  # Clean up DNF resources
+        except Exception:
+            logger.exception("Error closing DNF")
 
     return versions
 
