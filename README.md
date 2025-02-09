@@ -23,9 +23,19 @@ A collection of things I use for my homelab infrastructure as code
 - Pushing a change to `containers/**` triggers a rebuilding of all containers,
   should only rebuild changed files, and let the scheduler rebuild the rest
 
-  - Thoughts: Remove push/pull paths in main build-containers workflow and create
-    a separate workflow for on changes
+  - Thoughts: Remove push/pull paths in main build-containers workflow and
+    create a separate workflow for on changes
 
 - perf: instead of scanning the image - build the sbom that can be reused
 
 - chore(ci.containers): separate pr scanning and release build/scans
+
+- Containerfiles should have their pinned versions updated before doing a build
+
+### Scripts
+
+- Have pkg_update spawn a new container matching the containerfile to query for
+  new pkg versions
+
+- Show a changelog of what was updated, dnf - `dnf updateinfo list`; should be
+  added to pr/commit in workflow
