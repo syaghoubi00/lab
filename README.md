@@ -32,6 +32,8 @@ A collection of things I use for my homelab infrastructure as code
 
 - Containerfiles should have their pinned versions updated before doing a build
 
+- Create reusable workflows for building containers/images
+
 ### Scripts
 
 - Have pkg_update spawn a new container matching the containerfile to query for
