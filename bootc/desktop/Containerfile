@@ -1,0 +1,35 @@
+FROM quay.io/fedora/fedora-bootc:41
+
+# dnf group list --available
+# dnf group info "Development Tools"
+# dnf environment list --available
+# dnf environment info sway-desktop-environment
+#
+# >>> [RPM] failed to open dir root of /root/: cpio: mkdir failed - File exists
+# >>> [RPM] unpacking of archive failed on file /root/.bash_logout;67a67ff5: cpio:
+# >>> Unpack error: rootfiles-0:8.1-37.fc41.noarch
+
+# RUN dnf install -y @sway-desktop-environment @swaywm-extended --exclude=rootfiles && dnf clean all
+
+# Use hyprland instead of sway
+# see https://src.fedoraproject.org/rpms/hyprland/blob/rawhide/f/hyprland.spec for build info
+# hadolint ignore=DL3041
+RUN dnf install -y \
+  hyprland --exclude=kitty,wofi \
+  alacritty \
+  rofi \
+  waybar \
+  && dnf clean all
+
+# hadolint ignore=DL3041
+RUN dnf install -y \
+  flatpak \
+  distrobox \
+  cloud-utils \
+  opentofu \
+  podman-compose \
+  qemu \
+  screen \
+  snapd \
+  yubico-piv-tool-devel \
+  && dnf clean all

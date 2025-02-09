@@ -1,0 +1,39 @@
+[[customizations.filesystem]]
+mountpoint = "/"
+minsize = "10 GiB"
+
+[[customizations.filesystem]]
+mountpoint = "/boot"
+minsize = "2 GiB"
+
+[customizations.installer.modules]
+enable = [
+  "org.fedoraproject.Anaconda.Modules.Localization",
+  "org.fedoraproject.Anaconda.Modules.Timezone",
+  "org.fedoraproject.Anaconda.Modules.Network",
+  "org.fedoraproject.Anaconda.Modules.Payloads",
+  "org.fedoraproject.Anaconda.Modules.Runtime",
+  "org.fedoraproject.Anaconda.Modules.Security",
+  "org.fedoraproject.Anaconda.Modules.Services",
+  "org.fedoraproject.Anaconda.Modules.Storage",
+  "org.fedoraproject.Anaconda.Modules.Subscription",
+  "org.fedoraproject.Anaconda.Modules.Timezone",
+  "org.fedoraproject.Anaconda.Modules.Users",
+]
+disable = []
+[customizations.installer.kickstart]
+contents = """
+# Use graphical install
+graphical
+
+# Keyboard layouts
+# keyboard --vckeymap=us --xlayouts='us'
+# System language
+# lang en_US.UTF-8
+
+# Firewall configuration
+# firewall --use-system-defaults
+
+# Run the Setup Agent on first boot
+# firstboot --enable
+"""
