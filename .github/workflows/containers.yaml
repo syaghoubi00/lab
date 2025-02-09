@@ -8,12 +8,11 @@ on:
       # NOTE: Dockerfile/Containerfile path could probably be merged with regex
       - "containers/**/Dockerfile"
       - "containers/**/Containerfile"
-
     tags:
       # NOTE: Only trigger on patch push.tags events
       # so when pushing vX, vX.X, and vX.X.X
       # the workflow doesn't get triggered 3 times
-      - "v*.*.*"
+      - "v[0-9]+.[0-9]+.[0-9]+"
   pull_request:
     branches: ["main"]
     paths:
