@@ -31,7 +31,7 @@ jobs:
       matrix: ${{ steps.create-matrix.outputs.matrix }}
     env:
       # If apps are stored in a directory, such as './containers/app{1..}'
-      CONTAINERS_DIR: "containers"
+      CONTAINER_DIR: "containers"
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4.2.2
@@ -40,7 +40,7 @@ jobs:
         uses: ./.github/actions/create-containerfile-matrix
         id: create-matrix
         with:
-          containers_dir: ${{ env.CONTAINERS_DIR }}
+          container_dir: ${{ env.CONTAINER_DIR }}
 
   build:
     timeout-minutes: 60
