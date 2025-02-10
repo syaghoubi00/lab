@@ -35,3 +35,5 @@ RUN dnf install -y \
   && dnf clean all
 
 USER nobody
+
+RUN bootc container lint
