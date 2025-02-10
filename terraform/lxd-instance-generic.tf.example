@@ -1,0 +1,22 @@
+locals {
+  cloud_init_username = "user-here"
+}
+
+resource "lxd_instance" "namehere" {
+  project          = terraform.workspace
+  name             = "name-here"
+  description      = "desc-here"
+  image            = "ubuntu-minimal:24.04"
+  profiles         = ["common", "bridge", "2xlarge"]
+  type             = "virtual-machine"
+  wait_for_network = true
+
+  config = {
+    "user.access_interface" = "enp5s0" # interface used to report IP
+    "cloud-init.user-data" = templatefile("${path.module}/cloud-init/generic-user-data.tftpl", {
+      cloud_init_user     = local.cloud_init_username,
+      ssh_authorized_keys = var.cloudinit_ssh_authorized_keys,
+      # hostname            = format("%s-%s-%s", terraform.workspace, local.name, count.index)
+    })
+  }
+}
