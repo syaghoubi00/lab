@@ -48,6 +48,23 @@ updates:
       include: "scope"
     open-pull-requests-limit: 5
 
+  # Docker container updates for containers/bootc/desktop
+  - package-ecosystem: "docker"
+    directory: "/containers/bootc/desktop"
+    reviewers: 
+      - "syaghoubi00"
+    schedule:
+      interval: "daily"
+      timezone: "Etc/UTC"
+    groups:
+      containers:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    open-pull-requests-limit: 5
+
   # Docker container updates for containers/ansible-dev-tools
   - package-ecosystem: "docker"
     directory: "/containers/ansible-dev-tools"
