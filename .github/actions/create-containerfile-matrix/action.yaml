@@ -17,10 +17,12 @@ runs:
     - name: Build Containerfile Matrix
       id: build-matrix
       shell: bash
+      env:
+        CONTAINER_DIR: ${{ inputs.container_dir }}
       run: |
         # Find all container files and create matrix
         matrix=$(
-          find "${CONTAINERS_DIR:-.}" -type f \( -name "Containerfile" -o -name "Dockerfile" \) |
+          find "${CONTAINER_DIR:-.}" -type f \( -name "Containerfile" -o -name "Dockerfile" \) |
             while IFS= read -r containerfile; do
               # Remove leading ./ if present
               clean_path=${containerfile#./}
@@ -40,7 +42,7 @@ runs:
                 tag="latest"
               else
                 # Check if we're in the containers directory structure
-                if [[ -n "${CONTAINERS_DIR}" ]] && [[ "$dir_path" =~ ${CONTAINERS_DIR} ]]; then
+                if [[ -n "${CONTAINER_DIR}" ]] && [[ "$dir_path" =~ ${CONTAINER_DIR} ]]; then
                   # Handle containers directory structure
                   case $segment_count in
                     2) # Two levels: containers/app1/Containerfile
@@ -95,8 +97,8 @@ runs:
 
         if [ "$matrix" = "[]" ] || [ -z "$matrix" ]; then
           echo "::error::No container files found in:"
-          echo "::error::  - ${CONTAINERS_DIR}/**/Dockerfile"
-          echo "::error::  - ${CONTAINERS_DIR}/**/Containerfile"
+          echo "::error::  - ${CONTAINER_DIR}/**/Dockerfile"
+          echo "::error::  - ${CONTAINER_DIR}/**/Containerfile"
           echo "::error::Please ensure container files exist and are properly formatted"
           exit 1
         fi
