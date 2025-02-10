@@ -33,3 +33,5 @@ RUN dnf install -y \
   snapd \
   yubico-piv-tool-devel \
   && dnf clean all
+
+USER nobody
