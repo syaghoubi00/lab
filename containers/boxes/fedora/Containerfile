@@ -49,7 +49,7 @@ RUN dnf install -y \
 # Inatall gh-cli
 RUN dnf install -y dnf5-plugins && \
   dnf config-manager addrepo --from-repofile=https://cli.github.com/packages/rpm/gh-cli.repo && \
-  dnf install -y gh-2.66.1-1 --repo gh-cli && \
+  dnf install -y gh-2.67.0 --repo gh-cli && \
   dnf clean all
 
 # Switched to container
