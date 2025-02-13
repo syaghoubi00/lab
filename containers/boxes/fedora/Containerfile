@@ -8,14 +8,14 @@ COPY etc/dnf/dnf.conf /etc/dnf/dnf.conf
 RUN dnf install -y \
   ImageMagick-7.1.1.43 \
   ansible-9.13.0 \
-  bash-completion-2.13 \
+  bash-completion-2.16 \
   bat-0.24.0 \
-  bind-utils-9.18.30 \
+  bind-utils-9.18.33 \
   cargo-1.84.1 \
   cloud-utils-0.33 \
   fd-find-10.1.0 \
   flatpak-spawn-1.0.6 \
-  fzf-0.58.0 \
+  fzf-0.59.0 \
   gcc-14.2.1 \
   git-2.48.1 \
   htop-3.3.0 \
