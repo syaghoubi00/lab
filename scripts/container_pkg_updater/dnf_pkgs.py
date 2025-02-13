@@ -80,7 +80,7 @@ def extract_base_image_info(content: str) -> tuple[str, str]:
     """
     # Match common DNF distros
     patterns = {
-        "fedora": r"^FROM\s+.*fedora:(\d+)",
+        "fedora": r"^FROM\s+.*fedora.*:(\d+)",
         "centos": r"^FROM\s+.*centos:(\d+)",
         "almalinux": r"^FROM\s+.*almalinux:(\d+)",
         "rocky": r"^FROM\s+.*rockylinux:(\d+)",
