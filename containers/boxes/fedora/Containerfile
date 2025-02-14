@@ -44,6 +44,7 @@ RUN dnf install -y \
   xorriso-1.5.6 \
   yq-4.43.1 \
   zoxide-0.9.4 \
+  glibc-langpack-en \
   && dnf clean all
 
 # Inatall gh-cli
