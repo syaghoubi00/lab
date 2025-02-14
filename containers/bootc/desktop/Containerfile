@@ -14,7 +14,7 @@ FROM quay.io/fedora/fedora-bootc:41
 # Use hyprland instead of sway
 # see https://src.fedoraproject.org/rpms/hyprland/blob/rawhide/f/hyprland.spec for build info
 # hadolint ignore=DL3041
-RUN dnf install -y --exclude=kitty,wofi \
+RUN dnf install -y \
   hyprland \
   alacritty \
   rofi \
