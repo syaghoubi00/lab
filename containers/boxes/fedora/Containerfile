@@ -53,6 +53,11 @@ RUN dnf install -y dnf5-plugins && \
   dnf install -y gh-2.67.0 --repo gh-cli && \
   dnf clean all
 
+# Install Azure CLI
+RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
+  dnf install -y https://packages.microsoft.com/config/rhel/9.0/packages-microsoft-prod.rpm && \
+  dnf install -y azure-cli && dnf clean all
+
 # Switched to container
 # RUN python3 -m pip --no-cache-dir install molecule molecule-plugins ansible-dev-tools
 
