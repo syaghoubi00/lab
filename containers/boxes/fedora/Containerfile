@@ -15,7 +15,7 @@ RUN dnf install -y \
   cloud-utils-0.33 \
   fd-find-10.1.0 \
   flatpak-spawn-1.0.6 \
-  fzf-0.59.0 \
+  fzf-0.60.0 \
   gcc-14.2.1 \
   git-2.48.1 \
   htop-3.3.0 \
