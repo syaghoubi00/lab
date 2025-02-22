@@ -69,6 +69,12 @@ RUN hugo_latest_version="$(wget -qO- https://api.github.com/repos/gohugoio/hugo/
 # Docker-compose
 RUN wget -qO /tmp/bin/docker-compose https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
 
+# Kubectl
+RUN wget -qO /tmp/bin/kubectl "https://dl.k8s.io/release/$(wget -qO- https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+  cd /tmp/bin/ && \
+  echo "$(wget -qO- "https://dl.k8s.io/release/$(wget -qO- https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256") kubectl" | sha256sum --check && \
+  install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
 # Cleanup tmp
 RUN chmod +x /tmp/bin/* && mv /tmp/bin/* /bin && rmdir /tmp/bin/
 
