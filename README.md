@@ -36,8 +36,5 @@ A collection of things I use for my homelab infrastructure as code
 
 ### Scripts
 
-- Have pkg_update spawn a new container matching the containerfile to query for
-  new pkg versions
-
 - Show a changelog of what was updated, dnf - `dnf updateinfo list`; should be
   added to pr/commit in workflow
