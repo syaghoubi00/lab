@@ -41,6 +41,3 @@ A collection of things I use for my homelab infrastructure as code
 
 - Show a changelog of what was updated, dnf - `dnf updateinfo list`; should be
   added to pr/commit in workflow
-
-- External repositories should be checked, if any are included in the
-  containerfile
