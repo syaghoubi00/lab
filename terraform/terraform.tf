@@ -10,6 +10,10 @@ terraform {
       source  = "digitalocean/digitalocean"
       version = "~> 2.0"
     }
+    hcp = {
+      source  = "hashicorp/hcp"
+      version = "~> 0.0"
+    }
     local = {
       source  = "hashicorp/local"
       version = "~>2.0"
