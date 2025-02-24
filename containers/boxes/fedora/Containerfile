@@ -58,6 +58,10 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
   dnf install -y https://packages.microsoft.com/config/rhel/9.0/packages-microsoft-prod.rpm && \
   dnf install -y azure-cli && dnf clean all
 
+# Install HCP CLI
+RUN wget -qO- https://rpm.releases.hashicorp.com/fedora/hashicorp.repo | tee /etc/yum.repos.d/hashicorp.repo && \
+  dnf install -y hcp && dnf clean all
+
 # Switched to container
 # RUN python3 -m pip --no-cache-dir install molecule molecule-plugins ansible-dev-tools
 
