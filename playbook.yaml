@@ -26,3 +26,12 @@
     coredns_corefile: ./configs/coredns/Corefile
   roles:
     - coredns
+
+- name: Deploy terraform IaC
+  hosts: localhost
+  tasks:
+    - name: Apply terraform project
+      community.general.terraform:
+        binary_path: /usr/bin/tofu
+        project_path: "./terraform/"
+        state: present
