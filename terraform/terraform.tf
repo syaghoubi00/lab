@@ -2,9 +2,13 @@ terraform {
   required_version = "~> 1.7"
 
   required_providers {
+    ansible = {
+      source  = "ansible/ansible"
+      version = "~> 1.0"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>4.0"
+      version = "~> 4.0"
     }
     digitalocean = {
       source  = "digitalocean/digitalocean"
@@ -16,7 +20,7 @@ terraform {
     }
     local = {
       source  = "hashicorp/local"
-      version = "~>2.0"
+      version = "~> 2.0"
     }
   }
 }
