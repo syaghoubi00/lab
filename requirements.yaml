@@ -2,15 +2,15 @@ collections:
   - name: syaghoubi00.homelab
     version: ">1.0.0,<2.0.0"
 roles:
-  - name: coredns
+  - name: syaghoubi00-coredns
     src: https://github.com/syaghoubi00/ansible-role-coredns
     version: main
-  - name: bind
+  - name: syaghoubi00-bind
     src: https://github.com/syaghoubi00/ansible-role-bind
     version: main
-  - name: docker
+  - name: syaghoubi00-docker
     src: https://github.com/syaghoubi00/ansible-role-docker
     version: main
-  - name: zfs
+  - name: syaghoubi00-zfs
     src: https://github.com/syaghoubi00/ansible-role-zfs
     version: main
