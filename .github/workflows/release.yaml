@@ -10,7 +10,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Create Release
-        uses: googleapis/release-please-action@v4.1.3
+        uses: googleapis/release-please-action@v4.1.4
         id: release
         with:
           token: ${{ secrets.RELEASE_PAT }}
