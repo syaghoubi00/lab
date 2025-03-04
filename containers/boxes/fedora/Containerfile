@@ -24,6 +24,7 @@ RUN dnf install -y \
   ipmitool-1.8.19 \
   iputils-20240905 \
   jq-1.7.1 \
+  python3-pip \
   libicu-74.2 \
   lm_sensors-3.6.0 \
   man-db-2.12.1 \
