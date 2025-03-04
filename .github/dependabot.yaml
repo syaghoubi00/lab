@@ -31,9 +31,9 @@ updates:
       include: "scope"
     open-pull-requests-limit: 5
 
-  # Docker container updates for containers/boxes/fedora
+  # Docker container updates for containers/ansible-dev-tools
   - package-ecosystem: "docker"
-    directory: "/containers/boxes/fedora"
+    directory: "/containers/ansible-dev-tools"
     reviewers: 
       - "syaghoubi00"
     schedule:
@@ -65,9 +65,9 @@ updates:
       include: "scope"
     open-pull-requests-limit: 5
 
-  # Docker container updates for containers/ansible-dev-tools
+  # Docker container updates for containers/boxes/fedora
   - package-ecosystem: "docker"
-    directory: "/containers/ansible-dev-tools"
+    directory: "/containers/boxes/fedora"
     reviewers: 
       - "syaghoubi00"
     schedule:
