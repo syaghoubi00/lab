@@ -11,7 +11,7 @@ RUN dnf install -y \
   bash-completion-2.16 \
   bat-0.24.0 \
   bind-utils-9.18.33 \
-  cargo-1.84.1 \
+  cargo-1.85.0 \
   cloud-utils-0.33 \
   fd-find-10.1.0 \
   flatpak-spawn-1.0.6 \
@@ -38,7 +38,7 @@ RUN dnf install -y \
   poetry-1.8.3 \
   python3-neovim-0.5.2 \
   ripgrep-14.1.1 \
-  rust-1.84.1 \
+  rust-1.85.0 \
   tmux-3.5a \
   tree-2.1.0 \
   unzip-6.0 \
