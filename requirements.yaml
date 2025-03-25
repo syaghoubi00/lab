@@ -1,6 +1,7 @@
 collections:
-  - name: syaghoubi00.homelab
-    version: ">1.0.0,<2.0.0"
+  - name: https://github.com/syaghoubi00/ansible-collection-homelab
+    version: main
+    type: git
 roles:
   - name: syaghoubi00-coredns
     src: https://github.com/syaghoubi00/ansible-role-coredns
