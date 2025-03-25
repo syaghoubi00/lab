@@ -9,9 +9,6 @@ roles:
   - name: syaghoubi00-bind
     src: https://github.com/syaghoubi00/ansible-role-bind
     version: main
-  - name: syaghoubi00-docker
-    src: https://github.com/syaghoubi00/ansible-role-docker
-    version: main
   - name: syaghoubi00-zfs
     src: https://github.com/syaghoubi00/ansible-role-zfs
     version: main
