@@ -45,8 +45,8 @@ resource "ansible_playbook" "docker_setup" {
   # Extra variables to pass to the playbook
   extra_vars = {
     ansible_host                 = digitalocean_droplet.docker.ipv4_address
-    ansible_ssh_private_key_file = var.ssh_private_key_path
     ansible_user                 = "root"
+    ansible_ssh_private_key_file = local_sensitive_file.ssh_private_key.filename
 
     docker_rootless_mode  = true
     docker_ssh_public_key = data.hcp_vault_secrets_app.lab.secrets["ssh_public_key"]
