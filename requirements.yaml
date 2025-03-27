@@ -2,6 +2,7 @@ collections:
   - name: https://github.com/syaghoubi00/ansible-collection-homelab
     version: main
     type: git
+  - name: cloud.terraform
 roles:
   - name: syaghoubi00-coredns
     src: https://github.com/syaghoubi00/ansible-role-coredns
