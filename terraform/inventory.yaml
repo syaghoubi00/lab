@@ -1,0 +1,4 @@
+# NOTE: This inventory file only seems to work when called from the directory that its in
+# 'ansible-inventory -i inventory.yaml --graph --vars'
+# doesn't work when called from parent dir with 'ansible-inventory -i terraform/inventory.yaml --graph --vars'
+plugin: cloud.terraform.terraform_provider
