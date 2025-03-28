@@ -8,10 +8,11 @@ echo "=== Terraform ==="
 
 # BUG: Need to check if SSH is ready before running ansible
 # for host in $ANSIBLE_INVENTORY; do
+#   SSH_PORT=22
 #   while false; do
 #     echo "Waiting for SSH on $host..."
 #     sleep 5
-#     nc -zv "$host" 22
+#     nc -zv -w 1 "$host" "$SSH_PORT"
 #   done
 # done
 
