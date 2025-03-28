@@ -20,4 +20,4 @@ echo "=== Ansible ==="
 # TODO: Use custom collection path
 echo "Installing Ansible collections..."
 ansible-galaxy collection install -r requirements.yaml
-ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.yaml playbook.yaml
+SSH_AUTH_SOCK="" ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.yaml playbook.yaml
