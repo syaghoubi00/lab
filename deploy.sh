@@ -6,15 +6,34 @@ TF_DIR="terraform"
 echo "=== Terraform ==="
 "$TF_CMD" -chdir="$TF_DIR" apply || exit 1
 
-# BUG: Need to check if SSH is ready before running ansible
-# for host in $ANSIBLE_INVENTORY; do
-#   SSH_PORT=22
-#   while false; do
-#     echo "Waiting for SSH on $host..."
-#     sleep 5
-#     nc -zv -w 1 "$host" "$SSH_PORT"
-#   done
-# done
+echo "=== SSH ==="
+HOSTS=$(ansible-inventory -i inventory.yaml --list | jq -r '._meta.hostvars | keys[]')
+
+check_ssh() {
+  host=$1
+  port=22
+  nc -z -w 1 "$host" "$port" 2>/dev/null
+  return $?
+}
+
+for host in $HOSTS; do
+  echo "Checking SSH on $host..."
+
+  for attempt in $(seq 1 5); do
+    if check_ssh "$host"; then
+      echo "SSH on $host is ready."
+      break
+    else
+      echo "Attempt $attempt: Waiting for SSH on $host..."
+      sleep 5
+    fi
+
+    if [ "$attempt" -eq 3 ]; then
+      echo "SSH on $host is not ready after 3 attempts. Exiting."
+      exit 1
+    fi
+  done
+done
 
 echo "=== Ansible ==="
 export ANSIBLE_COLLECTIONS_PATH="./tmp"  # Set local collection path
