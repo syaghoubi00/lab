@@ -3,6 +3,10 @@ collections:
     version: main
     type: git
   - name: cloud.terraform
+  # # NOTE: 2025-03-29 - Current git repo doesn't have major/minor tags
+  # - name: https://github.com/ansible-collections/cloud.terraform
+  #   type: git
+  #   version: 3.0.0
 roles:
   - name: syaghoubi00-coredns
     src: https://github.com/syaghoubi00/ansible-role-coredns
