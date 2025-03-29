@@ -8,6 +8,9 @@ collections:
   #   type: git
   #   version: 3.0.0
 roles:
+  - name: ansible-lockdown.ubuntu24_cis
+    src: https://github.com/ansible-lockdown/UBUNTU24-CIS
+    version: main
   - name: syaghoubi00-coredns
     src: https://github.com/syaghoubi00/ansible-role-coredns
     version: main
