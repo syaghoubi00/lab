@@ -17,7 +17,11 @@ echo "=== Terraform ==="
 # done
 
 echo "=== Ansible ==="
-# TODO: Use custom collection path
+export ANSIBLE_COLLECTIONS_PATH="./tmp"  # Set local collection path
+export SSH_AUTH_SOCK=""                  # Disable SSH agent
+export ANSIBLE_HOST_KEY_CHECKING="False" # No TOFU
+
 echo "Installing Ansible collections..."
 ansible-galaxy collection install -r requirements.yaml
-SSH_AUTH_SOCK="" ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.yaml playbook.yaml
+
+ansible-playbook -i inventory.yaml playbook.yaml
