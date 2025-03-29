@@ -60,3 +60,38 @@
         binary_path: /usr/bin/tofu
         project_path: "./terraform/"
         state: present
+
+- name: Harden Hosts
+  hosts: harden
+  become: true
+  handlers:
+    - name: Create Hardening Timestamp
+      ansible.builtin.file:
+        path: "{{ ansible_state_dir }}/hardened"
+        mode: "0644"
+        state: touch
+  tasks:
+    - name: Check if the host has been hardened already
+      ansible.builtin.stat:
+        path: "{{ ansible_state_dir }}/hardened"
+      register: hardened
+
+    - name: Apply CIS Remidiation to Ubuntu-24.* Hosts
+      when:
+        - ansible_distribution == "Ubuntu"
+        - ansible_distribution_major_version is version(24)
+        - no hardened.stat.exists
+        # NOTE: To run hardening on a schedule (weekly)
+        # - (ansible_date_time.epoch | int) - (last_time_hardened.stat.mtime | int) > 604800
+      notify: Create Hardening Timestamp
+      block:
+        - name: Run Ansible Lockdown
+          ansible.builtin.import_role:
+            name: ansible-lockdown.ubuntu24_cis
+          vars:
+            setup_audit: true
+            run_audit: true
+            # NOTE: 2025-03-28 - Setting the vars at a host level wasn't working
+            # tried both `import_role` and `include_role`
+            ubtu24cis_rule_5_2_4: false # Allow accounts with login shell to be locked
+            ubtu24cis_rule_5_4_2_4: false # Don't require root password to be set
