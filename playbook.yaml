@@ -16,9 +16,19 @@
 
 - name: Update Hosts Packages
   become: true
+  hosts: all
+  handlers:
+    - name: Add Last Update Timestamp
+      ansible.builtin.file:
+        path: "{{ ansible_state_dir }}/last_update"
+        mode: "0644"
+        state: touch
+  tasks:
+    - name: Update All Packages
       when: perform_updates | bool
       block:
-        - name: Update apt systems
+        - name: Update APT Systems
+          notify: Add Last Update Timestamp
           ansible.builtin.apt:
             package: "*"
             update_cache: true
@@ -26,7 +36,8 @@
             autoclean: true
             state: latest
           when: ansible_os_family == 'Debian'
-        - name: Update dnf systems
+        - name: Update DNF Systems
+          notify: Add Last Update Timestamp
           ansible.builtin.dnf:
             name: "*"
             state: latest
