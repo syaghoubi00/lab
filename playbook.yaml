@@ -1,22 +1,25 @@
 - name: Update lab packages
   become: true
   hosts: all
-  gather_facts: true
-  tags: update
+  vars:
+    perform_updates: false # Don't perform updates by default
   tasks:
-    - name: Update apt systems
-      ansible.builtin.apt:
-        package: "*"
-        update_cache: true
-        autoremove: true
-        autoclean: true
-        state: latest
-      when: ansible_os_family == 'Debian'
-    - name: Update dnf systems
-      ansible.builtin.dnf:
-        name: "*"
-        state: latest
-      when: ansible_os_family == 'RedHat'
+    - name: Update all packages
+      when: perform_updates | bool
+      block:
+        - name: Update apt systems
+          ansible.builtin.apt:
+            package: "*"
+            update_cache: true
+            autoremove: true
+            autoclean: true
+            state: latest
+          when: ansible_os_family == 'Debian'
+        - name: Update dnf systems
+          ansible.builtin.dnf:
+            name: "*"
+            state: latest
+          when: ansible_os_family == 'RedHat'
 
 - name: Seed lab
   become: true
