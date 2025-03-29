@@ -1,10 +1,21 @@
-- name: Update lab packages
+- name: Prepare Hosts
   become: true
+  gather_facts: false
   hosts: all
-  vars:
-    perform_updates: false # Don't perform updates by default
   tasks:
-    - name: Update all packages
+    - name: Create Ansible Working Directory
+      ansible.builtin.file:
+        path: "{{ ansible_working_dir }}"
+        mode: "0644"
+        state: directory
+    - name: Create Directory for Storing State
+      ansible.builtin.file:
+        path: "{{ ansible_state_dir }}"
+        mode: "0644"
+        state: directory
+
+- name: Update Hosts Packages
+  become: true
       when: perform_updates | bool
       block:
         - name: Update apt systems

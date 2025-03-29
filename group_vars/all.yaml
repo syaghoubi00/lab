@@ -1,0 +1,3 @@
+ansible_working_dir: "/opt/ansible"
+ansible_state_dir: "{{ ansible_working_dir }}/state"
+perform_updates: false # Don't perform updates by default
