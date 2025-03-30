@@ -15,6 +15,13 @@ resource "azurerm_resource_group" "rg" {
   }
 }
 
+resource "azurerm_log_analytics_workspace" "aks" {
+  name                = "${local.cluster_name}-logs"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  retention_in_days   = 30
+}
+
 resource "azurerm_kubernetes_cluster" "lab_cluster" {
   name                = local.cluster_name
   dns_prefix          = local.cluster_name
@@ -37,5 +44,9 @@ resource "azurerm_kubernetes_cluster" "lab_cluster" {
 
   identity {
     type = "SystemAssigned"
+  }
+
+  oms_agent {
+    log_analytics_workspace_id = azurerm_log_analytics_workspace.aks.id
   }
 }
