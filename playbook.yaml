@@ -45,6 +45,7 @@
 
 - name: Deploy terraform IaC
   hosts: localhost
+  gather_facts: false
   tasks:
     - name: Apply terraform project
       community.general.terraform:
