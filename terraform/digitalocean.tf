@@ -2,12 +2,14 @@ resource "digitalocean_project" "dev_lab" {
   name        = "dev_lab"
   description = "Lab Development"
   environment = "Development"
+  resources   = [digitalocean_droplet.docker.urn]
 }
 
 resource "digitalocean_project" "prod_lab" {
   name        = "prod_lab"
   description = "Lab Production"
   environment = "Production"
+  resources   = []
 }
 
 resource "digitalocean_ssh_key" "default" {
