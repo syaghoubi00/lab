@@ -36,7 +36,7 @@ for host in $HOSTS; do
 done
 
 echo "=== Ansible ==="
-export ANSIBLE_COLLECTIONS_PATH="./tmp"  # Set local collection path
+export ANSIBLE_COLLECTIONS_PATH="."      # Set local collection path
 export SSH_AUTH_SOCK=""                  # Disable SSH agent
 export ANSIBLE_HOST_KEY_CHECKING="False" # No TOFU
 
