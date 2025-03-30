@@ -43,15 +43,6 @@
             state: latest
           when: ansible_os_family == 'RedHat'
 
-- name: Seed lab
-  become: true
-  hosts: seed
-  gather_facts: true
-  vars:
-    coredns_corefile: ./configs/coredns/Corefile
-  roles:
-    - coredns
-
 - name: Deploy terraform IaC
   hosts: localhost
   tasks:
