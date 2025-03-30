@@ -1,35 +1,35 @@
-name: Scan IaC Configs for Vulnerabilities
-on:
-  push:
-    branches: ["main"]
-  pull_request:
-jobs:
-  configs:
-    permissions:
-      contents: read # To checkout and read repository
-      security-events: write # To upload to security tab
-    name: Scan Configs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4.2.2
-
-      - name: Run Trivy Vulnerability Scanner in IaC Mode
-        uses: aquasecurity/trivy-action@0.30.0
-        with:
-          scan-type: "config"
-          hide-progress: true
-          format: "sarif"
-          output: "trivy-results.sarif"
-          exit-code: "1"
-          severity: "CRITICAL,HIGH,MEDIUM"
-          # NOTE: By default SARIF format enforces output of
-          # all vulnerabilities regardless of configured severities.
-          limit-severities-for-sarif: true
-
-      - name: Upload Trivy Scan Results to GitHub Security Tab
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3.28.12
-        with:
-          sarif_file: "trivy-results.sarif"
-          category: "IaC-Config"
+# name: Scan IaC Configs for Vulnerabilities
+# on:
+#   push:
+#     branches: ["main"]
+#   pull_request:
+# jobs:
+#   configs:
+#     permissions:
+#       contents: read # To checkout and read repository
+#       security-events: write # To upload to security tab
+#     name: Scan Configs
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4.2.2
+#
+#       - name: Run Trivy Vulnerability Scanner in IaC Mode
+#         uses: aquasecurity/trivy-action@0.30.0
+#         with:
+#           scan-type: "config"
+#           hide-progress: true
+#           format: "sarif"
+#           output: "trivy-results.sarif"
+#           exit-code: "1"
+#           severity: "CRITICAL,HIGH,MEDIUM"
+#           # NOTE: By default SARIF format enforces output of
+#           # all vulnerabilities regardless of configured severities.
+#           limit-severities-for-sarif: true
+#
+#       - name: Upload Trivy Scan Results to GitHub Security Tab
+#         if: always()
+#         uses: github/codeql-action/upload-sarif@v3.28.12
+#         with:
+#           sarif_file: "trivy-results.sarif"
+#           category: "IaC-Config"

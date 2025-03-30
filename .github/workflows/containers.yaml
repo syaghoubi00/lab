@@ -1,309 +1,309 @@
-name: Build Containers
-
-on:
-  push:
-    branches: ["main"]
-    paths:
-      # Only trigger rebuilds on changes to build definitions
-      # NOTE: Dockerfile/Containerfile path could probably be merged with regex
-      - "containers/**/Dockerfile"
-      - "containers/**/Containerfile"
-    tags:
-      # NOTE: Only trigger on patch push.tags events
-      # so when pushing vX, vX.X, and vX.X.X
-      # the workflow doesn't get triggered 3 times
-      - "v[0-9]+.[0-9]+.[0-9]+"
-  pull_request:
-    branches: ["main"]
-    paths:
-      - "containers/**"
-  schedule:
-    - cron: "0 0 * * 0" # Weekly on Sundays at midnight
-  workflow_dispatch:
-
-jobs:
-  prepare-matrix:
-    timeout-minutes: 5
-    permissions:
-      contents: read # For checkout
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.create-matrix.outputs.matrix }}
-    env:
-      # If apps are stored in a directory, such as './containers/app{1..}'
-      CONTAINER_DIR: "containers"
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4.2.2
-
-      - name: Create Containerfile Matrix
-        uses: ./.github/actions/create-containerfile-matrix
-        id: create-matrix
-        with:
-          container_dir: ${{ env.CONTAINER_DIR }}
-
-  build:
-    timeout-minutes: 60
-    needs: prepare-matrix
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # Upload SBOM (Trivy)
-      packages: write
-      security-events: write # Uploading SARIF files
-      id-token: write # Signing
-      attestations: write # Uploading attestations
-      # pull-requests: write # Docker Scout PR comments
-    strategy:
-      fail-fast: false # Allow other containers to build if one fails
-      matrix:
-        container: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
-    concurrency:
-      group: ${{ github.workflow }}-${{ matrix.container.app }}
-      cancel-in-progress: true
-    env:
-      # CSV List of platforms to build for
-      PLATFORMS: linux/amd64
-      CONTAINER_REGISTRY: "ghcr.io"
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4.2.2
-        timeout-minutes: 1
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.10.0
-        timeout-minutes: 3
-        with:
-          platforms: ${{ env.PLATFORMS }}
-
-      - name: Export Container for Scanning
-        uses: docker/build-push-action@v6.15.0
-        id: export-container
-        timeout-minutes: 10
-        with:
-          context: ${{ github.workspace }}/${{ matrix.container.context }}
-          file: ${{ github.workspace }}/${{ matrix.container.file }}
-          platforms: linux/amd64 # Only build single platform for scanning
-          load: true # Load into docker daemon
-          # NOTE: Don't use ${{ steps.meta.outputs.tags }} because it includes the registry,
-          # which was breaking the Trivy scan.
-          tags: ${{ matrix.container.app }}:${{ matrix.container.tag }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-        env:
-          # Reproducible builds
-          # NOTE: Can also use the git commit date,
-          # but it requires an extra step.
-          SOURCE_DATE_EPOCH: 0
-
-      # # NOTE: Requires Docker Hub account
-      # - name: Docker Scout
-      #   id: docker-scout
-      #   if: ${{ github.event_name == 'pull_request' }}
-      #   uses: docker/scout-action@v1.16.1
-      #   with:
-      #     dockerhub-user: ${{ env.DOCKERHUB_USER }}
-      #     dockerhub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      #     command: quickview,cves,recommendations,sbom
-      #     image: ${{ matrix.container.app }}:${{ matrix.container.tag }}
-      #     sarif-file: sarif-results/scout.sarif
-      #     # ignore-unchanged: true
-      #     # only-severities: critical,high
-      #     write-comment: true
-      #     github-token: ${{ secrets.GITHUB_TOKEN }} # to be able to write the comment
-      #     summary: true
-      #     format: list
-
-      - name: Run Anchore (Grype) Vulnerability Scanner
-        uses: anchore/scan-action@v6.1.0
-        id: anchore-scan
-        timeout-minutes: 5
-        with:
-          image: ${{ matrix.container.app }}:${{ matrix.container.tag }}
-          fail-build: false # Fail if vulnerabilities found
-          severity-cutoff: critical
-          only-fixed: false # Only report vulnerabilities that have a fix available
-          output-file: "sarif-results/grype.sarif"
-          output-format: "sarif"
-
-      # NOTE: Doesn't fail if vulns are found - they are only reported
-      - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@0.30.0
-        id: trivy-scan
-        timeout-minutes: 5
-        with:
-          scan-type: "image"
-          image-ref: ${{ matrix.container.app }}:${{ matrix.container.tag }}
-          format: "sarif"
-          output: "sarif-results/trivy.sarif"
-          severity: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL" # SARIF automatically exports all severities
-          scanners: "vuln"
-          # ignore-unfixed: true
-          # exit-code: "1"  # Fail if vulnerabilities found
-
-      - name: Log in to the Container Registry
-        uses: docker/login-action@v3.4.0
-        if: ${{ github.event_name != 'pull_request' }}
-        timeout-minutes: 1
-        with:
-          registry: ${{ env.CONTAINER_REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate Docker Metadata
-        uses: docker/metadata-action@v5.7.0
-        id: meta
-        if: ${{ github.event_name != 'pull_request' }}
-        timeout-minutes: 3
-        with:
-          # NOTE: Can push to multiple registries by adding them here -
-          # will need to add another step to login into the other container registry
-          images: |
-            ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
-          flavor: |
-            latest=auto
-          tags: |
-            type=raw,value=${{ matrix.container.tag }}
-            type=schedule,pattern=nightly
-            type=schedule
-            type=semver,pattern={{major}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}.{{minor}}.{{patch}}
-            type=edge
-            type=ref,event=branch
-            type=ref,event=tag
-            type=sha
-          labels: |
-            org.opencontainers.image.title=${{ matrix.container.app }}
-            org.opencontainers.image.version=${{ matrix.container.tag }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            com.github.repo=${{ github.repository }}
-            com.github.ref=${{ github.ref }}
-            com.github.workflow=${{ github.workflow }}
-            build.repository=${{ github.repository }}
-            build.branch=${{ github.ref_name }}
-            build.commit=${{ github.sha }}
-            build.version=${{ matrix.container.tag }}
-            build.context=${{ matrix.container.context }}
-
-      # Push the image if scans pass and not a PR
-      # build other platforms if specified
-      # add attestations
-      - name: Build and Push Containers
-        uses: docker/build-push-action@v6.15.0
-        id: build-and-push
-        if: ${{ github.event_name != 'pull_request' }}
-        timeout-minutes: 10
-        with:
-          context: ${{ github.workspace }}/${{ matrix.container.context }}
-          file: ${{ github.workspace }}/${{ matrix.container.file }}
-          platforms: ${{ env.PLATFORMS }}
-          sbom: true
-          provenance: mode=max
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-        env:
-          # Reproducible builds
-          # NOTE: Can also use the git commit date,
-          # but it requires an extra step.
-          SOURCE_DATE_EPOCH: 0
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.8.1
-        if: ${{ github.event_name != 'pull_request' }}
-        timeout-minutes: 1
-
-      - name: Sign the images with GitHub OIDC Token
-        id: cosign
-        if: ${{ github.event_name != 'pull_request' }}
-        timeout-minutes: 3
-        env:
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
-          TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          images=""
-          for tag in ${TAGS}; do
-            images+="${tag}@${DIGEST} "
-          done
-          cosign sign --yes ${images}
-
-      - name: Verify Image Signatures
-        id: cosign-verify
-        if: ${{ github.event_name != 'pull_request' }}
-        timeout-minutes: 3
-        env:
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
-          TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          for image in ${TAGS}; do
-            cosign verify \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-identity ${{ github.server_url }}/${{ github.workflow_ref }} \
-            ${image}@${DIGEST}
-          done
-
-      - name: Upload - SBOM to Dependency Graph
-        uses: aquasecurity/trivy-action@0.30.0
-        id: sbom-upload
-        if: ${{ github.event_name != 'pull_request' }}
-        timeout-minutes: 5
-        with:
-          scan-type: "image"
-          scanners: "vuln"
-          image-ref: ${{ matrix.container.app }}:${{ matrix.container.tag }}
-          format: "github"
-          output: "dependency-results.sbom.json"
-          github-pat: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload - SLSA Build Provenance
-        uses: actions/attest-build-provenance@v2.2.3
-        id: attest
-        if: ${{ github.event_name != 'pull_request' }}
-        timeout-minutes: 5
-        with:
-          subject-name: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
-          subject-digest: ${{ steps.build-and-push.outputs.digest }}
-          push-to-registry: true
-          show-summary: true
-
-      # Upload the scan results
-      - name: Upload - SARIF Results
-        uses: github/codeql-action/upload-sarif@v3.28.12
-        id: upload-sarif
-        if: ${{ github.event_name != 'pull_request' }}
-        timeout-minutes: 2
-        with:
-          sarif_file: sarif-results/
-          category: "container-security-${{ matrix.container.app }}-${{ matrix.container.tag }}"
-
-      - name: Build Summary
-        if: always()
-        run: |
-          {
-            echo "## Job Summary: ${{ matrix.container.app }}:${{ matrix.container.tag }}"
-            echo "### Build Information"
-            echo "- **Repository:** \`${{ github.repository }}\`"
-            echo "- **Branch:** \`${{ github.ref_name }}\`"
-            echo "- **Commit:** \`${{ github.sha }}\`"
-            echo "- **Trigger:** \`${{ github.event_name }}\`"
-            echo "- **Build Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-            echo "### Build Details"
-            echo "- **Container**: \`${{ matrix.container.app }}\`"
-            echo "- **Tag**: \`${{ matrix.container.tag }}\`"
-            echo "- **Context**: \`${{ matrix.container.context }}\`"
-            echo ""
-            echo "| Step | Status |"
-            echo "|------|--------|"
-            echo "| Build | \`${{ steps.export-container.outcome }}\` |"
-            # echo "| Scout | \`${{ steps.docker-scout.outcome }}\` |"
-            echo "| Anchore | \`${{ steps.anchore-scan.outcome }}\` |"
-            echo "| Trivy | \`${{ steps.trivy-scan.outcome }}\` |"
-            echo "| Upload SARIF | \`${{ steps.upload-sarif.outcome }}\` |"
-            echo "| Push | \`${{ steps.build-and-push.outcome }}\` |"
-            echo "| Sign Images | \`${{ steps.cosign.outcome }}\` |"
-            echo "| Verify Signatures | \`${{ steps.cosign-verify.outcome }}\` |"
-            echo "| Upload SBOM | \`${{ steps.sbom-upload.outcome }}\` |"
-            echo "| Attest | \`${{ steps.attest.outcome }}\` |"
-          } >> $GITHUB_STEP_SUMMARY
+# name: Build Containers
+#
+# on:
+#   push:
+#     branches: ["main"]
+#     paths:
+#       # Only trigger rebuilds on changes to build definitions
+#       # NOTE: Dockerfile/Containerfile path could probably be merged with regex
+#       - "containers/**/Dockerfile"
+#       - "containers/**/Containerfile"
+#     tags:
+#       # NOTE: Only trigger on patch push.tags events
+#       # so when pushing vX, vX.X, and vX.X.X
+#       # the workflow doesn't get triggered 3 times
+#       - "v[0-9]+.[0-9]+.[0-9]+"
+#   pull_request:
+#     branches: ["main"]
+#     paths:
+#       - "containers/**"
+#   schedule:
+#     - cron: "0 0 * * 0" # Weekly on Sundays at midnight
+#   workflow_dispatch:
+#
+# jobs:
+#   prepare-matrix:
+#     timeout-minutes: 5
+#     permissions:
+#       contents: read # For checkout
+#     runs-on: ubuntu-latest
+#     outputs:
+#       matrix: ${{ steps.create-matrix.outputs.matrix }}
+#     env:
+#       # If apps are stored in a directory, such as './containers/app{1..}'
+#       CONTAINER_DIR: "containers"
+#     steps:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v4.2.2
+#
+#       - name: Create Containerfile Matrix
+#         uses: ./.github/actions/create-containerfile-matrix
+#         id: create-matrix
+#         with:
+#           container_dir: ${{ env.CONTAINER_DIR }}
+#
+#   build:
+#     timeout-minutes: 60
+#     needs: prepare-matrix
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: write # Upload SBOM (Trivy)
+#       packages: write
+#       security-events: write # Uploading SARIF files
+#       id-token: write # Signing
+#       attestations: write # Uploading attestations
+#       # pull-requests: write # Docker Scout PR comments
+#     strategy:
+#       fail-fast: false # Allow other containers to build if one fails
+#       matrix:
+#         container: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+#     concurrency:
+#       group: ${{ github.workflow }}-${{ matrix.container.app }}
+#       cancel-in-progress: true
+#     env:
+#       # CSV List of platforms to build for
+#       PLATFORMS: linux/amd64
+#       CONTAINER_REGISTRY: "ghcr.io"
+#     steps:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v4.2.2
+#         timeout-minutes: 1
+#
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v3.10.0
+#         timeout-minutes: 3
+#         with:
+#           platforms: ${{ env.PLATFORMS }}
+#
+#       - name: Export Container for Scanning
+#         uses: docker/build-push-action@v6.15.0
+#         id: export-container
+#         timeout-minutes: 10
+#         with:
+#           context: ${{ github.workspace }}/${{ matrix.container.context }}
+#           file: ${{ github.workspace }}/${{ matrix.container.file }}
+#           platforms: linux/amd64 # Only build single platform for scanning
+#           load: true # Load into docker daemon
+#           # NOTE: Don't use ${{ steps.meta.outputs.tags }} because it includes the registry,
+#           # which was breaking the Trivy scan.
+#           tags: ${{ matrix.container.app }}:${{ matrix.container.tag }}
+#           cache-from: type=gha
+#           cache-to: type=gha,mode=max
+#         env:
+#           # Reproducible builds
+#           # NOTE: Can also use the git commit date,
+#           # but it requires an extra step.
+#           SOURCE_DATE_EPOCH: 0
+#
+#       # # NOTE: Requires Docker Hub account
+#       # - name: Docker Scout
+#       #   id: docker-scout
+#       #   if: ${{ github.event_name == 'pull_request' }}
+#       #   uses: docker/scout-action@v1.16.1
+#       #   with:
+#       #     dockerhub-user: ${{ env.DOCKERHUB_USER }}
+#       #     dockerhub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#       #     command: quickview,cves,recommendations,sbom
+#       #     image: ${{ matrix.container.app }}:${{ matrix.container.tag }}
+#       #     sarif-file: sarif-results/scout.sarif
+#       #     # ignore-unchanged: true
+#       #     # only-severities: critical,high
+#       #     write-comment: true
+#       #     github-token: ${{ secrets.GITHUB_TOKEN }} # to be able to write the comment
+#       #     summary: true
+#       #     format: list
+#
+#       - name: Run Anchore (Grype) Vulnerability Scanner
+#         uses: anchore/scan-action@v6.1.0
+#         id: anchore-scan
+#         timeout-minutes: 5
+#         with:
+#           image: ${{ matrix.container.app }}:${{ matrix.container.tag }}
+#           fail-build: false # Fail if vulnerabilities found
+#           severity-cutoff: critical
+#           only-fixed: false # Only report vulnerabilities that have a fix available
+#           output-file: "sarif-results/grype.sarif"
+#           output-format: "sarif"
+#
+#       # NOTE: Doesn't fail if vulns are found - they are only reported
+#       - name: Run Trivy Vulnerability Scanner
+#         uses: aquasecurity/trivy-action@0.30.0
+#         id: trivy-scan
+#         timeout-minutes: 5
+#         with:
+#           scan-type: "image"
+#           image-ref: ${{ matrix.container.app }}:${{ matrix.container.tag }}
+#           format: "sarif"
+#           output: "sarif-results/trivy.sarif"
+#           severity: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL" # SARIF automatically exports all severities
+#           scanners: "vuln"
+#           # ignore-unfixed: true
+#           # exit-code: "1"  # Fail if vulnerabilities found
+#
+#       - name: Log in to the Container Registry
+#         uses: docker/login-action@v3.4.0
+#         if: ${{ github.event_name != 'pull_request' }}
+#         timeout-minutes: 1
+#         with:
+#           registry: ${{ env.CONTAINER_REGISTRY }}
+#           username: ${{ github.actor }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
+#
+#       - name: Generate Docker Metadata
+#         uses: docker/metadata-action@v5.7.0
+#         id: meta
+#         if: ${{ github.event_name != 'pull_request' }}
+#         timeout-minutes: 3
+#         with:
+#           # NOTE: Can push to multiple registries by adding them here -
+#           # will need to add another step to login into the other container registry
+#           images: |
+#             ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
+#           flavor: |
+#             latest=auto
+#           tags: |
+#             type=raw,value=${{ matrix.container.tag }}
+#             type=schedule,pattern=nightly
+#             type=schedule
+#             type=semver,pattern={{major}}
+#             type=semver,pattern={{major}}.{{minor}}
+#             type=semver,pattern={{major}}.{{minor}}.{{patch}}
+#             type=edge
+#             type=ref,event=branch
+#             type=ref,event=tag
+#             type=sha
+#           labels: |
+#             org.opencontainers.image.title=${{ matrix.container.app }}
+#             org.opencontainers.image.version=${{ matrix.container.tag }}
+#             org.opencontainers.image.revision=${{ github.sha }}
+#             com.github.repo=${{ github.repository }}
+#             com.github.ref=${{ github.ref }}
+#             com.github.workflow=${{ github.workflow }}
+#             build.repository=${{ github.repository }}
+#             build.branch=${{ github.ref_name }}
+#             build.commit=${{ github.sha }}
+#             build.version=${{ matrix.container.tag }}
+#             build.context=${{ matrix.container.context }}
+#
+#       # Push the image if scans pass and not a PR
+#       # build other platforms if specified
+#       # add attestations
+#       - name: Build and Push Containers
+#         uses: docker/build-push-action@v6.15.0
+#         id: build-and-push
+#         if: ${{ github.event_name != 'pull_request' }}
+#         timeout-minutes: 10
+#         with:
+#           context: ${{ github.workspace }}/${{ matrix.container.context }}
+#           file: ${{ github.workspace }}/${{ matrix.container.file }}
+#           platforms: ${{ env.PLATFORMS }}
+#           sbom: true
+#           provenance: mode=max
+#           push: true
+#           tags: ${{ steps.meta.outputs.tags }}
+#           labels: ${{ steps.meta.outputs.labels }}
+#           cache-from: type=gha
+#           cache-to: type=gha,mode=max
+#         env:
+#           # Reproducible builds
+#           # NOTE: Can also use the git commit date,
+#           # but it requires an extra step.
+#           SOURCE_DATE_EPOCH: 0
+#
+#       - name: Install Cosign
+#         uses: sigstore/cosign-installer@v3.8.1
+#         if: ${{ github.event_name != 'pull_request' }}
+#         timeout-minutes: 1
+#
+#       - name: Sign the images with GitHub OIDC Token
+#         id: cosign
+#         if: ${{ github.event_name != 'pull_request' }}
+#         timeout-minutes: 3
+#         env:
+#           DIGEST: ${{ steps.build-and-push.outputs.digest }}
+#           TAGS: ${{ steps.meta.outputs.tags }}
+#         run: |
+#           images=""
+#           for tag in ${TAGS}; do
+#             images+="${tag}@${DIGEST} "
+#           done
+#           cosign sign --yes ${images}
+#
+#       - name: Verify Image Signatures
+#         id: cosign-verify
+#         if: ${{ github.event_name != 'pull_request' }}
+#         timeout-minutes: 3
+#         env:
+#           DIGEST: ${{ steps.build-and-push.outputs.digest }}
+#           TAGS: ${{ steps.meta.outputs.tags }}
+#         run: |
+#           for image in ${TAGS}; do
+#             cosign verify \
+#             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+#             --certificate-identity ${{ github.server_url }}/${{ github.workflow_ref }} \
+#             ${image}@${DIGEST}
+#           done
+#
+#       - name: Upload - SBOM to Dependency Graph
+#         uses: aquasecurity/trivy-action@0.30.0
+#         id: sbom-upload
+#         if: ${{ github.event_name != 'pull_request' }}
+#         timeout-minutes: 5
+#         with:
+#           scan-type: "image"
+#           scanners: "vuln"
+#           image-ref: ${{ matrix.container.app }}:${{ matrix.container.tag }}
+#           format: "github"
+#           output: "dependency-results.sbom.json"
+#           github-pat: ${{ secrets.GITHUB_TOKEN }}
+#
+#       - name: Upload - SLSA Build Provenance
+#         uses: actions/attest-build-provenance@v2.2.3
+#         id: attest
+#         if: ${{ github.event_name != 'pull_request' }}
+#         timeout-minutes: 5
+#         with:
+#           subject-name: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.container.app }}
+#           subject-digest: ${{ steps.build-and-push.outputs.digest }}
+#           push-to-registry: true
+#           show-summary: true
+#
+#       # Upload the scan results
+#       - name: Upload - SARIF Results
+#         uses: github/codeql-action/upload-sarif@v3.28.12
+#         id: upload-sarif
+#         if: ${{ github.event_name != 'pull_request' }}
+#         timeout-minutes: 2
+#         with:
+#           sarif_file: sarif-results/
+#           category: "container-security-${{ matrix.container.app }}-${{ matrix.container.tag }}"
+#
+#       - name: Build Summary
+#         if: always()
+#         run: |
+#           {
+#             echo "## Job Summary: ${{ matrix.container.app }}:${{ matrix.container.tag }}"
+#             echo "### Build Information"
+#             echo "- **Repository:** \`${{ github.repository }}\`"
+#             echo "- **Branch:** \`${{ github.ref_name }}\`"
+#             echo "- **Commit:** \`${{ github.sha }}\`"
+#             echo "- **Trigger:** \`${{ github.event_name }}\`"
+#             echo "- **Build Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+#             echo "### Build Details"
+#             echo "- **Container**: \`${{ matrix.container.app }}\`"
+#             echo "- **Tag**: \`${{ matrix.container.tag }}\`"
+#             echo "- **Context**: \`${{ matrix.container.context }}\`"
+#             echo ""
+#             echo "| Step | Status |"
+#             echo "|------|--------|"
+#             echo "| Build | \`${{ steps.export-container.outcome }}\` |"
+#             # echo "| Scout | \`${{ steps.docker-scout.outcome }}\` |"
+#             echo "| Anchore | \`${{ steps.anchore-scan.outcome }}\` |"
+#             echo "| Trivy | \`${{ steps.trivy-scan.outcome }}\` |"
+#             echo "| Upload SARIF | \`${{ steps.upload-sarif.outcome }}\` |"
+#             echo "| Push | \`${{ steps.build-and-push.outcome }}\` |"
+#             echo "| Sign Images | \`${{ steps.cosign.outcome }}\` |"
+#             echo "| Verify Signatures | \`${{ steps.cosign-verify.outcome }}\` |"
+#             echo "| Upload SBOM | \`${{ steps.sbom-upload.outcome }}\` |"
+#             echo "| Attest | \`${{ steps.attest.outcome }}\` |"
+#           } >> $GITHUB_STEP_SUMMARY
