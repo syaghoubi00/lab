@@ -48,7 +48,7 @@
   tasks:
     - name: Apply terraform project
       community.general.terraform:
-        binary_path: /usr/bin/tofu
+        # binary_path: /usr/bin/tofu
         project_path: "./terraform/"
         state: present
 
