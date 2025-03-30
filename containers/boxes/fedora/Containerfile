@@ -64,9 +64,6 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
 RUN dnf config-manager addrepo --from-repofile=https://rpm.releases.hashicorp.com/fedora/hashicorp.repo && \
   dnf install -y hcp terraform && dnf clean all
 
-# Switched to container
-# RUN python3 -m pip --no-cache-dir install molecule molecule-plugins ansible-dev-tools
-
 # Tmp dir for binaries
 RUN mkdir /tmp/bin/
 # Hugo
@@ -76,8 +73,8 @@ RUN hugo_latest_version="$(wget -qO- https://api.github.com/repos/gohugoio/hugo/
 RUN wget -qO /tmp/bin/docker-compose https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
 
 # Kubectl
+WORKDIR /tmp/bin
 RUN wget -qO /tmp/bin/kubectl "https://dl.k8s.io/release/$(wget -qO- https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
-  cd /tmp/bin/ && \
   echo "$(wget -qO- "https://dl.k8s.io/release/$(wget -qO- https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256") kubectl" | sha256sum --check && \
   install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
