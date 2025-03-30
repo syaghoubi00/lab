@@ -33,6 +33,10 @@ resource "digitalocean_droplet" "docker" {
   graceful_shutdown = true
 }
 
+output "do_docker_ip" {
+  description = "The IP address of the Docker droplet"
+  value       = digitalocean_droplet.docker.ipv4_address
+}
 
 resource "ansible_host" "do_docker" {
   name   = digitalocean_droplet.docker.ipv4_address
