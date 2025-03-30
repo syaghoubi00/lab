@@ -1,0 +1,14 @@
+policies:
+  - type: commit
+    spec:
+      conventional:
+        descriptionLength: 72
+        scopes: [".*"]  # allow all scopes (regex)
+        types: ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"]
+      header:
+        case: lower
+        imperative: true
+        invalidLastCharacters: .
+        length: 72
+      spellcheck:
+        locale: US
