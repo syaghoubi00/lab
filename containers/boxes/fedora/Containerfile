@@ -87,3 +87,5 @@ COPY host-cmd.sh /usr/bin/host-cmd
 RUN ln -s /usr/bin/host-cmd /usr/bin/podman
 
 USER toolbox
+
+HEALTHCHECK NONE

@@ -37,3 +37,5 @@ RUN dnf install -y \
 # USER nobody
 
 RUN bootc container lint
+
+HEALTHCHECK NONE

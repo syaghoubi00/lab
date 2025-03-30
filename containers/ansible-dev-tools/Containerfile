@@ -4,3 +4,5 @@ FROM ghcr.io/ansible/community-ansible-dev-tools:v24.12.0
 RUN pip install --no-cache-dir molecule-plugins==23.6.0
 
 USER dev-tools
+
+HEALTHCHECK NONE
