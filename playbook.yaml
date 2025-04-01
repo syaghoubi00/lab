@@ -89,7 +89,7 @@
       when:
         - ansible_distribution == "Ubuntu"
         - ansible_distribution_major_version is version(24)
-        - no hardened.stat.exists
+        - not hardened.stat.exists
         # NOTE: To run hardening on a schedule (weekly)
         # - (ansible_date_time.epoch | int) - (last_time_hardened.stat.mtime | int) > 604800
       notify: Create Hardening Timestamp
