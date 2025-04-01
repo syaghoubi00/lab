@@ -1,0 +1,11 @@
+- name: Install Requirements
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Install Ansible requirements.yaml
+      ansible.builtin.command: "ansible-galaxy install -r requirements.yaml"
+      changed_when: false
+
+- name: Run Main Playbook
+  ansible.builtin.import_playbook: playbook.yaml
+

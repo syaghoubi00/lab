@@ -1,3 +1,30 @@
+- name: Deploy Terraform IaC
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Apply terraform project
+      community.general.terraform:
+        # binary_path: /usr/bin/tofu
+        project_path: "./terraform/"
+        workspace: default
+        provider_upgrade: true
+        check_destroy: true
+        state: present
+
+    # NOTE: Reload inventory with any new hosts
+    - name: Refresh Inventory
+      ansible.builtin.meta: refresh_inventory
+
+- name: Wait for Hosts
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Wait for the Host to Become Reachable
+      ansible.builtin.wait_for_connection:
+        timeout: 300  # Maximum time to wait in seconds (5 minutes)
+        delay: 5      # Initial delay before starting checks
+        sleep: 5      # Time between connection attempts
+
 - name: Prepare Hosts
   become: true
   gather_facts: false
@@ -42,16 +69,6 @@
             name: "*"
             state: latest
           when: ansible_os_family == 'RedHat'
-
-- name: Deploy terraform IaC
-  hosts: localhost
-  gather_facts: false
-  tasks:
-    - name: Apply terraform project
-      community.general.terraform:
-        # binary_path: /usr/bin/tofu
-        project_path: "./terraform/"
-        state: present
 
 - name: Harden Hosts
   hosts: harden
