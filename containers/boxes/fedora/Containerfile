@@ -47,6 +47,7 @@ RUN dnf install -y \
   yq-4.43.1 \
   zoxide-0.9.4 \
   glibc-langpack-en \
+  uv-0.6.2-1 \
   && dnf clean all
 
 # Inatall gh-cli
