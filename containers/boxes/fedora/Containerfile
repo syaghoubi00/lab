@@ -1,4 +1,4 @@
-FROM registry.fedoraproject.org/fedora:41
+FROM registry.fedoraproject.org/fedora:42
 
 LABEL com.github.containers.toolbox="true"
 LABEL org.opencontainers.image.description="Development Toolbox"
@@ -7,47 +7,47 @@ LABEL org.opencontainers.image.description="Development Toolbox"
 COPY etc/dnf/dnf.conf /etc/dnf/dnf.conf
 RUN dnf install -y \
   ImageMagick-7.1.1.46 \
-  ansible-9.13.0 \
+  ansible-11.3.0 \
   bash-completion-2.16 \
-  bat-0.24.0 \
-  bind-utils-9.18.33 \
-  cargo-1.85.1 \
+  bat-0.25.0 \
+  bind-utils-9.18.35 \
+  cargo-1.86.0 \
   cloud-utils-0.33 \
   fd-find-10.1.0 \
   flatpak-spawn-1.0.6 \
-  fzf-0.60.3 \
-  golang \
-  gcc-14.2.1 \
+  fzf-0.61.1 \
+  golang-1.24.2 \
+  gcc-15.0.1 \
   git-2.49.0 \
   htop-3.3.0 \
-  iperf3-3.17.1 \
+  iperf3-3.18 \
   ipmitool-1.8.19 \
   iputils-20240905 \
   jq-1.7.1 \
   python3-pip \
-  libicu-74.2 \
+  libicu-76.1 \
   lm_sensors-3.6.0 \
-  man-db-2.12.1 \
+  man-db-2.13.0 \
   man-pages-6.9.1 \
-  ncdu-1.22 \
-  neovim-0.10.4 \
+  ncdu-2.7 \
+  neovim-0.11.0 \
   netcat-1.229 \
   opentofu-1.9.0 \
-  perl-Image-ExifTool-12.70 \
+  perl-Image-ExifTool-13.10 \
   pgp-tools-2.10 \
-  poetry-1.8.3 \
+  poetry-1.8.5 \
   python3-neovim-0.5.2 \
   ripgrep-14.1.1 \
-  rust-1.85.1 \
+  rust-1.86.0 \
   tmux-3.5a \
-  tree-2.1.0 \
+  tree-2.2.1 \
   unzip-6.0 \
-  usbutils-017 \
+  usbutils-018 \
   xorriso-1.5.6 \
   yq-4.43.1 \
   zoxide-0.9.4 \
   glibc-langpack-en \
-  uv-0.6.2-1 \
+  uv-0.6.5 \
   && dnf clean all
 
 # Inatall gh-cli
@@ -63,8 +63,18 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
   dnf install -y azure-cli && dnf clean all
 
 # Install HCP CLI and Terraform
-RUN dnf config-manager addrepo --from-repofile=https://rpm.releases.hashicorp.com/fedora/hashicorp.repo && \
-  dnf install -y hcp terraform && dnf clean all
+# NOTE: 2025-04-19 - RPM repo is not available for Fedora 42, so we need to add the old F41 repao manually
+# RUN dnf config-manager addrepo --from-repofile=https://rpm.releases.hashicorp.com/fedora/hashicorp.repo && \
+RUN cat <<EOF > /etc/yum.repos.d/hashicorp.repo
+[hashicorp]
+name=Hashicorp Stable - 41
+baseurl=https://rpm.releases.hashicorp.com/fedora/41/x86_64/stable
+enabled=1
+gpgcheck=1
+gpgkey=https://rpm.releases.hashicorp.com/gpg
+EOF
+
+RUN dnf install -y hcp terraform && dnf clean all
 
 # Tmp dir for binaries
 RUN mkdir /tmp/bin/
