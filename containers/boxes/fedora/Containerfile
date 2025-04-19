@@ -18,6 +18,7 @@ RUN dnf install -y \
   fzf-0.61.1 \
   golang-1.24.2 \
   gcc-15.0.1 \
+  gcc-c++-15.0.1 \
   git-2.49.0 \
   htop-3.3.0 \
   iperf3-3.18 \
