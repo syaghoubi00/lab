@@ -6,7 +6,7 @@ LABEL org.opencontainers.image.description="Development Toolbox"
 # Add dnf conf, since default doesnt install manpages
 COPY etc/dnf/dnf.conf /etc/dnf/dnf.conf
 RUN dnf install -y \
-  ImageMagick-7.1.1.46 \
+  ImageMagick-7.1.1.47 \
   ansible-11.3.0 \
   bash-completion-2.16 \
   bat-0.25.0 \
@@ -48,7 +48,7 @@ RUN dnf install -y \
   yq-4.43.1 \
   zoxide-0.9.4 \
   glibc-langpack-en \
-  uv-0.6.5 \
+  uv-0.6.14 \
   && dnf clean all
 
 # Inatall gh-cli
