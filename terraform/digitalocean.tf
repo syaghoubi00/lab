@@ -1,3 +1,7 @@
+resource "digitalocean_tag" "docker" {
+  name = "docker"
+}
+
 resource "digitalocean_ssh_key" "default" {
   name       = "TF"
   public_key = data.hcp_vault_secrets_app.lab.secrets["ssh_public_key"]
@@ -12,7 +16,7 @@ resource "digitalocean_volume" "docker" {
   initial_filesystem_type  = "ext4"
   initial_filesystem_label = "docker"
   description              = "Docker volume"
-  tags                     = ["docker"]
+  tags                     = [digitalocean_tag.docker.id]
 }
 
 resource "digitalocean_droplet" "docker" {
@@ -25,7 +29,7 @@ resource "digitalocean_droplet" "docker" {
   ipv6        = true
   ssh_keys    = [digitalocean_ssh_key.default.fingerprint]
   resize_disk = false
-  tags        = ["lab", "docker"]
+  tags        = [digitalocean_tag.docker.id]
   user_data = templatefile("./cloud-init-templates/ansible/user-data.tftpl", {
     ssh_authorized_keys = [data.hcp_vault_secrets_app.lab.secrets["ssh_public_key"]]
   })
