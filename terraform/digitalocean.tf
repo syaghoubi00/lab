@@ -2,7 +2,8 @@ resource "digitalocean_project" "dev_lab" {
   name        = "dev_lab"
   description = "Lab Development"
   environment = "Development"
-  resources   = [digitalocean_droplet.docker.urn, digitalocean_volume.docker.urn]
+  # NOTE: Unable to add reserved_ip to resources, as it can't be moved while attached to a droplet.
+  resources = [digitalocean_droplet.docker.urn, digitalocean_volume.docker.urn]
 }
 
 resource "digitalocean_project" "prod_lab" {
