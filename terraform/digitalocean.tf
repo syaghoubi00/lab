@@ -1,18 +1,3 @@
-resource "digitalocean_project" "dev_lab" {
-  name        = "dev_lab"
-  description = "Lab Development"
-  environment = "Development"
-  # NOTE: Unable to add reserved_ip to resources, as it can't be moved while attached to a droplet.
-  resources = [digitalocean_droplet.docker.urn, digitalocean_volume.docker.urn]
-}
-
-resource "digitalocean_project" "prod_lab" {
-  name        = "prod_lab"
-  description = "Lab Production"
-  environment = "Production"
-  resources   = []
-}
-
 resource "digitalocean_ssh_key" "default" {
   name       = "TF"
   public_key = data.hcp_vault_secrets_app.lab.secrets["ssh_public_key"]
