@@ -34,7 +34,7 @@ resource "digitalocean_droplet" "docker" {
   name        = "docker"
   region      = "sfo2"
   size        = "s-1vcpu-1gb"
-  backups     = true
+  backups     = false # Disable backups, as the droplet itself is mostly ephemeral.
   monitoring  = true
   ipv6        = true
   ssh_keys    = [digitalocean_ssh_key.default.fingerprint]
