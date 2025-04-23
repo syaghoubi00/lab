@@ -78,3 +78,58 @@ resource "ansible_host" "do_docker" {
     docker_ssh_public_key = data.hcp_vault_secrets_app.lab.secrets["ssh_public_key"]
   }
 }
+
+# NOTE: Add account data to use email address for alerts.
+data "digitalocean_account" "account" {
+}
+
+# NOTE: Get all droplets with monitoring enabled.
+data "digitalocean_droplets" "monitored" {
+  filter {
+    key    = "monitoring"
+    values = ["true"]
+  }
+}
+
+resource "digitalocean_monitor_alert" "cpu_alert" {
+  alerts {
+    email = [data.digitalocean_account.account.email]
+  }
+  window      = "10m"
+  type        = "v1/insights/droplet/load_15"
+  compare     = "GreaterThan"
+  value       = 90
+  enabled     = true
+  entities    = data.digitalocean_droplets.monitored.droplets[*].id # All droplets with monitoring enabled
+  description = "Alert about CPU usage when above 90% for 10 minutes"
+}
+
+# NOTE: The disk utilization includes percentage used including attached volumes.
+# This means the droplets root drive or attached volumes can be full but not trigger the alert
+# if the usage is still below 75% of the total disk space.
+# Reference: https://docs.digitalocean.com/products/monitoring/concepts/metrics/#disk-usage
+resource "digitalocean_monitor_alert" "disk_alert" {
+  alerts {
+    email = [data.digitalocean_account.account.email]
+  }
+  window      = "5m"
+  type        = "v1/insights/droplet/disk_utilization_percent"
+  compare     = "GreaterThan"
+  value       = 75
+  enabled     = true
+  entities    = data.digitalocean_droplets.monitored.droplets[*].id # All droplets with monitoring enabled
+  description = "Alert about disk usage when above 75% for 5 minutes"
+}
+
+resource "digitalocean_monitor_alert" "memory_alert" {
+  alerts {
+    email = [data.digitalocean_account.account.email]
+  }
+  window      = "10m"
+  type        = "v1/insights/droplet/memory_utilization_percent"
+  compare     = "GreaterThan"
+  value       = 75
+  enabled     = true
+  entities    = data.digitalocean_droplets.monitored.droplets[*].id # All droplets with monitoring enabled
+  description = "Alert about memory usage when above 75% for 10 minutes"
+}
