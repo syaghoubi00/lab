@@ -55,13 +55,18 @@ resource "digitalocean_volume_attachment" "docker" {
   volume_id  = digitalocean_volume.docker.id
 }
 
+resource "digitalocean_reserved_ip" "docker" {
+  droplet_id = digitalocean_droplet.docker.id
+  region     = digitalocean_droplet.docker.region
+}
+
 output "do_docker_ip" {
   description = "The IP address of the Docker droplet"
-  value       = digitalocean_droplet.docker.ipv4_address
+  value       = digitalocean_reserved_ip.docker.ip_address
 }
 
 resource "ansible_host" "do_docker" {
-  name   = digitalocean_droplet.docker.ipv4_address
+  name   = digitalocean_reserved_ip.docker.ip_address
   groups = ["docker", "harden"]
 
   variables = {
