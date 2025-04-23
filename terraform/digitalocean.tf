@@ -33,8 +33,8 @@ resource "digitalocean_volume" "docker" {
 resource "digitalocean_droplet" "docker" {
   image       = "ubuntu-24-04-x64"
   name        = "docker"
-  region      = "sfo2"
-  size        = "s-1vcpu-1gb"
+  region      = "sfo3"
+  size        = "s-1vcpu-1gb-amd"
   backups     = false # Disable backups, as the droplet itself is mostly ephemeral.
   monitoring  = true
   ipv6        = true
