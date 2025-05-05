@@ -4,10 +4,15 @@ Infrastructure as Code (IaC).
 
 ## Usage
 
-`ansible-playbook -i inventory deploy.yaml`
+1. Install Ansible requirements/dependencies:
+
+`ansible-galaxy install -r requirements.yml`
+
+2. Run the playbook:
+
+`ansible-playbook -i inventory playbook.yaml`
 
 This will:
 
 1. Install requirements
-2. Import `playbook.yaml`
-3. `playbook.yaml` will provision and configure IaC
+2. Run `playbook.yaml`, which will provision and configure the Infrastructure.
