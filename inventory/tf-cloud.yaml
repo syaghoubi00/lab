@@ -1,5 +1,6 @@
 plugin: cloud.terraform.terraform_provider
 project_path:
+  # NOTE: Paths are relative to the root dir (../) - NOT the inventory dir.
   - "./terraform/"
   # - "./tf-local"
   # - "./tf-cloud"
