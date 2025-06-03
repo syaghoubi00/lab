@@ -4,6 +4,7 @@
   tasks:
     - name: Add SSH authorized keys to each system
       ansible.posix.authorized_key:
-        user: "{{ item.0.user }}"
-        key: "{{ item.1 }}"
-      loop: "{{ ssh_keys | subelements('keys') }}"
+        user: "{{ item.user }}"
+        key: "{{ item['keys'] | join('\n') }}"
+        # exclusive: true # Delete existing authorized_keys not included in the list
+      loop: "{{ ssh_keys }}"
