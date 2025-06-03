@@ -1,0 +1,38 @@
+#cloud-config
+autoinstall:
+  version: 1
+  storage:
+    layout:
+      name: lvm
+      sizing-policy: all
+      match:
+        # serial: AAA*
+        # model: AA*
+        # Install to the largest SSD in the system
+        size: largest
+        ssd: true
+  ssh:
+    install-server: true
+    # authorized-keys:
+    #   -
+    allow-pw: false
+  # timezone: "Los_Angeles/America"
+  user-data:
+    # Sets up an account for the machine to be configured with Ansible
+    ssh_pwauth: false
+
+    users:
+      - name: ansible
+        gecos: Ansible User
+        groups: wheel
+        sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+        shell: /bin/bash
+        lock_passwd: true
+        ssh_authorized_keys:
+          - "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIGXPIdsMCVcKB8yGWKnu4YL8IvQyzVgFly6q+yS4up9WAAAAK3NzaDp5a19zbl8yNTgyMTk1MV8yMDI0LTEyLTI3X2Fuc2libGUtdG91Y2g="
+
+    write_files:
+      ## Print IPv4 address on login screen
+      - path: /etc/issue.d/ip.issue
+        content: |
+          IP: \4
