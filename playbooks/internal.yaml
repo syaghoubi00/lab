@@ -1,0 +1,9 @@
+- name: Local Deployment
+  hosts: internal
+  become: true
+  tasks:
+    - name: Add SSH authorized keys to each system
+      ansible.posix.authorized_key:
+        user: "{{ item.0.user }}"
+        key: "{{ item.1 }}"
+      loop: "{{ ssh_keys | subelements('keys') }}"

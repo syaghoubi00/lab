@@ -116,3 +116,7 @@
   become: true
   roles:
     - syaghoubi00.homelab.docker
+
+- name: Deploy internal playbooks
+  tags: internal
+  ansible.builtin.import_playbook: ./playbooks/internal.yaml
