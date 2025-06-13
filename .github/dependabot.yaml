@@ -3,8 +3,6 @@ updates:
   # GitHub Actions updates
   - package-ecosystem: "github-actions"
     directory: "/"
-    reviewers: 
-      - "syaghoubi00"
     schedule:
       interval: "daily"
       timezone: "Etc/UTC"
@@ -31,11 +29,9 @@ updates:
       include: "scope"
     open-pull-requests-limit: 5
 
-  # Docker container updates for containers/ansible-dev-tools
+  # Docker container updates for containers/bootc/desktop
   - package-ecosystem: "docker"
-    directory: "/containers/ansible-dev-tools"
-    reviewers: 
-      - "syaghoubi00"
+    directory: "/containers/bootc/desktop"
     schedule:
       interval: "daily"
       timezone: "Etc/UTC"
@@ -48,11 +44,9 @@ updates:
       include: "scope"
     open-pull-requests-limit: 5
 
-  # Docker container updates for containers/bootc/desktop
+  # Docker container updates for containers/ansible-dev-tools
   - package-ecosystem: "docker"
-    directory: "/containers/bootc/desktop"
-    reviewers: 
-      - "syaghoubi00"
+    directory: "/containers/ansible-dev-tools"
     schedule:
       interval: "daily"
       timezone: "Etc/UTC"
@@ -68,8 +62,6 @@ updates:
   # Docker container updates for containers/boxes/fedora
   - package-ecosystem: "docker"
     directory: "/containers/boxes/fedora"
-    reviewers: 
-      - "syaghoubi00"
     schedule:
       interval: "daily"
       timezone: "Etc/UTC"
