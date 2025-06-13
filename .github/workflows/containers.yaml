@@ -258,7 +258,7 @@ jobs:
           github-pat: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload - SLSA Build Provenance
-        uses: actions/attest-build-provenance@v2.3.0
+        uses: actions/attest-build-provenance@v2.4.0
         id: attest
         if: ${{ github.event_name != 'pull_request' }}
         timeout-minutes: 5
