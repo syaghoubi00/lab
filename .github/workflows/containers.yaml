@@ -114,7 +114,7 @@ jobs:
       #     format: list
 
       - name: Run Anchore (Grype) Vulnerability Scanner
-        uses: anchore/scan-action@v6.1.0
+        uses: anchore/scan-action@v6.2.0
         id: anchore-scan
         timeout-minutes: 5
         with:
@@ -127,7 +127,7 @@ jobs:
 
       # NOTE: Doesn't fail if vulns are found - they are only reported
       - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         id: trivy-scan
         timeout-minutes: 5
         with:
@@ -245,7 +245,7 @@ jobs:
           done
 
       - name: Upload - SBOM to Dependency Graph
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.31.0
         id: sbom-upload
         if: ${{ github.event_name != 'pull_request' }}
         timeout-minutes: 5
@@ -270,7 +270,7 @@ jobs:
 
       # Upload the scan results
       - name: Upload - SARIF Results
-        uses: github/codeql-action/upload-sarif@v3.28.16
+        uses: github/codeql-action/upload-sarif@v3.28.19
         id: upload-sarif
         if: ${{ github.event_name != 'pull_request' }}
         timeout-minutes: 2
