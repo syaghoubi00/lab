@@ -70,7 +70,7 @@ jobs:
         timeout-minutes: 1
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.10.0
+        uses: docker/setup-buildx-action@v3.11.0
         timeout-minutes: 3
         with:
           platforms: ${{ env.PLATFORMS }}
