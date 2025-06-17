@@ -211,7 +211,7 @@ jobs:
           SOURCE_DATE_EPOCH: 0
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.8.2
+        uses: sigstore/cosign-installer@v3.9.0
         if: ${{ github.event_name != 'pull_request' }}
         timeout-minutes: 1
 
