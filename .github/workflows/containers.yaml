@@ -1,13 +1,13 @@
 name: Build Containers
 
 on:
-  # push:
-  #   branches: ["main"]
-  #   paths:
-  #     # Only trigger rebuilds on changes to build definitions
-  #     # NOTE: Dockerfile/Containerfile path could probably be merged with regex
-  #     - "containers/**/Dockerfile"
-  #     - "containers/**/Containerfile"
+  push:
+    branches: ["main"]
+    paths:
+      # Only trigger rebuilds on changes to build definitions
+      # NOTE: Dockerfile/Containerfile path could probably be merged with regex
+      - "containers/**/Dockerfile"
+      - "containers/**/Containerfile"
   #   tags:
   #     # NOTE: Only trigger on patch push.tags events
   #     # so when pushing vX, vX.X, and vX.X.X
@@ -17,8 +17,8 @@ on:
   #   branches: ["main"]
   #   paths:
   #     - "containers/**"
-  # schedule:
-  #   - cron: "0 0 * * 0" # Weekly on Sundays at midnight
+  schedule:
+    - cron: "0 0 * * 0" # Weekly on Sundays at midnight
   workflow_dispatch:
 
 jobs:
