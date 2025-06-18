@@ -61,6 +61,9 @@ jobs:
           - app: boxes-fedora
             tag: latest
             context: containers/boxes/fedora
+            # NOTE: docker/build-push-action doesn't read Containerfiles, only Dockerfiles
+            # so, specify Containerfile manually
+            file: containers/boxes/fedora/Containerfile
     concurrency:
       group: ${{ github.workflow }}-${{ matrix.container.app }}
       cancel-in-progress: true
