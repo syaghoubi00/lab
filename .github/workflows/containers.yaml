@@ -199,7 +199,7 @@ jobs:
         uses: docker/build-push-action@v6.18.0
         id: build-and-push
         if: ${{ github.event_name != 'pull_request' }}
-        timeout-minutes: 20
+        timeout-minutes: 40
         with:
           context: ${{ github.workspace }}/${{ matrix.container.context }}
           file: ${{ github.workspace }}/${{ matrix.container.file }}
