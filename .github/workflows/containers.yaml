@@ -22,29 +22,29 @@ on:
   workflow_dispatch:
 
 jobs:
-  prepare-matrix:
-    timeout-minutes: 5
-    permissions:
-      contents: read # For checkout
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.create-matrix.outputs.matrix }}
-    env:
-      # If apps are stored in a directory, such as './containers/app{1..}'
-      CONTAINER_DIR: "containers"
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4.2.2
-
-      - name: Create Containerfile Matrix
-        uses: ./.github/actions/create-containerfile-matrix
-        id: create-matrix
-        with:
-          container_dir: ${{ env.CONTAINER_DIR }}
+  # prepare-matrix:
+  #   timeout-minutes: 5
+  #   permissions:
+  #     contents: read # For checkout
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     matrix: ${{ steps.create-matrix.outputs.matrix }}
+  #   env:
+  #     # If apps are stored in a directory, such as './containers/app{1..}'
+  #     CONTAINER_DIR: "containers"
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v4.2.2
+  #
+  #     - name: Create Containerfile Matrix
+  #       uses: ./.github/actions/create-containerfile-matrix
+  #       id: create-matrix
+  #       with:
+  #         container_dir: ${{ env.CONTAINER_DIR }}
 
   build:
     timeout-minutes: 60
-    needs: prepare-matrix
+    # needs: prepare-matrix
     runs-on: ubuntu-latest
     permissions:
       contents: write # Upload SBOM (Trivy)
@@ -56,7 +56,11 @@ jobs:
     strategy:
       fail-fast: false # Allow other containers to build if one fails
       matrix:
-        container: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+        # container: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+        container:
+          - app: boxes-fedora
+            tag: latest
+            context: containers/boxes/fedora
     concurrency:
       group: ${{ github.workflow }}-${{ matrix.container.app }}
       cancel-in-progress: true
