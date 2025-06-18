@@ -44,21 +44,6 @@ updates:
       include: "scope"
     open-pull-requests-limit: 5
 
-  # Docker container updates for containers/ansible-dev-tools
-  - package-ecosystem: "docker"
-    directory: "/containers/ansible-dev-tools"
-    schedule:
-      interval: "daily"
-      timezone: "Etc/UTC"
-    groups:
-      containers:
-        patterns:
-          - "*"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-    open-pull-requests-limit: 5
-
   # Docker container updates for containers/boxes/fedora
   - package-ecosystem: "docker"
     directory: "/containers/boxes/fedora"
