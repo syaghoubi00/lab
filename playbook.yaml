@@ -44,6 +44,8 @@
 - name: Update Hosts Packages
   become: true
   hosts: all
+  tags: update
+  strategy: linear  # To allow for pause prompt for restarts
   handlers:
     - name: Add Last Update Timestamp
       ansible.builtin.file:
@@ -69,6 +71,41 @@
             name: "*"
             state: latest
           when: ansible_os_family == 'RedHat'
+
+        - name: Check if reboot is required (Debian/Ubuntu)
+          ansible.builtin.stat:
+            path: /var/run/reboot-required
+          register: reboot_required_debian
+          when: ansible_os_family == 'Debian'
+        - name: Check if reboot is required (EL-DNF5)
+          ansible.builtin.command: dnf5 needs-restarting -r
+          register: reboot_required_redhat
+          failed_when: false
+          changed_when: false
+          when: ansible_os_family == 'RedHat'
+
+        - name: Set reboot required fact
+          ansible.builtin.set_fact:
+            reboot_required: >-
+              {{ (ansible_os_family == 'Debian' and reboot_required_debian.stat.exists) or
+              (ansible_os_family == 'RedHat' and reboot_required_redhat.rc == 1) }}
+
+        - name: Prompt for reboot if required
+          ansible.builtin.pause:
+            prompt: "A reboot is required. Press 'y' then Enter to reboot now, or any other key to skip."
+          register: reboot_prompt
+          when: reboot_required
+
+        - name: Reboot the host if required
+          ansible.builtin.reboot:
+            msg: "Reboot initiated by Ansible after package updates."
+            connect_timeout: 5
+            reboot_timeout: 600
+            pre_reboot_delay: 0
+            post_reboot_delay: 30
+          when:
+            - reboot_required
+            - reboot_prompt.user_input | lower == 'y'
 
 - name: Harden Hosts
   hosts: harden
