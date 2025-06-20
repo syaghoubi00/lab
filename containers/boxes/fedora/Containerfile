@@ -64,18 +64,8 @@ RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
   dnf install -y azure-cli && dnf clean all
 
 # Install HCP CLI and Terraform
-# NOTE: 2025-04-19 - RPM repo is not available for Fedora 42, so we need to add the old F41 repao manually
-# RUN dnf config-manager addrepo --from-repofile=https://rpm.releases.hashicorp.com/fedora/hashicorp.repo && \
-RUN cat <<EOF > /etc/yum.repos.d/hashicorp.repo
-[hashicorp]
-name=Hashicorp Stable - 41
-baseurl=https://rpm.releases.hashicorp.com/fedora/41/x86_64/stable
-enabled=1
-gpgcheck=1
-gpgkey=https://rpm.releases.hashicorp.com/gpg
-EOF
-
-RUN dnf install -y hcp terraform && dnf clean all
+RUN dnf config-manager addrepo --from-repofile=https://rpm.releases.hashicorp.com/fedora/hashicorp.repo && \
+  dnf install -y hcp terraform && dnf clean all
 
 # Tmp dir for binaries
 RUN mkdir /tmp/bin/
