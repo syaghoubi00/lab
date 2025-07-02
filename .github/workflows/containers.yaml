@@ -121,7 +121,7 @@ jobs:
       #     format: list
 
       - name: Run Anchore (Grype) Vulnerability Scanner
-        uses: anchore/scan-action@v6.3.0
+        uses: anchore/scan-action@v6.4.0
         id: anchore-scan
         timeout-minutes: 5
         with:
