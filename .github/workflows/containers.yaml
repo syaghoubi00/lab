@@ -157,7 +157,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate Docker Metadata
-        uses: docker/metadata-action@v5.7.0
+        uses: docker/metadata-action@v5.8.0
         id: meta
         if: ${{ github.event_name != 'pull_request' }}
         timeout-minutes: 3
