@@ -29,9 +29,9 @@ updates:
       include: "scope"
     open-pull-requests-limit: 5
 
-  # Docker container updates for containers/bootc/desktop
+  # Docker container updates for containers/boxes/fedora
   - package-ecosystem: "docker"
-    directory: "/containers/bootc/desktop"
+    directory: "/containers/boxes/fedora"
     schedule:
       interval: "daily"
       timezone: "Etc/UTC"
@@ -44,9 +44,9 @@ updates:
       include: "scope"
     open-pull-requests-limit: 5
 
-  # Docker container updates for containers/boxes/fedora
+  # Docker container updates for containers/bootc/desktop
   - package-ecosystem: "docker"
-    directory: "/containers/boxes/fedora"
+    directory: "/containers/bootc/desktop"
     schedule:
       interval: "daily"
       timezone: "Etc/UTC"
