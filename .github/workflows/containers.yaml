@@ -34,7 +34,7 @@ jobs:
   #     CONTAINER_DIR: "containers"
   #   steps:
   #     - name: Checkout Repository
-  #       uses: actions/checkout@v5.0.1
+  #       uses: actions/checkout@v6.0.1
   #
   #     - name: Create Containerfile Matrix
   #       uses: ./.github/actions/create-containerfile-matrix
@@ -73,7 +73,7 @@ jobs:
       CONTAINER_REGISTRY: "ghcr.io"
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5.0.1
+        uses: actions/checkout@v6.0.1
         timeout-minutes: 1
 
       - name: Set up Docker Buildx
