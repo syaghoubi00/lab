@@ -134,7 +134,7 @@ jobs:
 
       # NOTE: Doesn't fail if vulns are found - they are only reported
       - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.0
         id: trivy-scan
         timeout-minutes: 5
         with:
@@ -252,7 +252,7 @@ jobs:
           done
 
       - name: Upload - SBOM to Dependency Graph
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.0
         id: sbom-upload
         if: ${{ github.event_name != 'pull_request' }}
         timeout-minutes: 5
