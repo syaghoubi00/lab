@@ -83,7 +83,7 @@ jobs:
           platforms: ${{ env.PLATFORMS }}
 
       - name: Export Container for Scanning
-        uses: docker/build-push-action@v6.19.1
+        uses: docker/build-push-action@v6.19.2
         id: export-container
         timeout-minutes: 10
         with:
@@ -196,7 +196,7 @@ jobs:
       # build other platforms if specified
       # add attestations
       - name: Build and Push Containers
-        uses: docker/build-push-action@v6.19.1
+        uses: docker/build-push-action@v6.19.2
         id: build-and-push
         if: ${{ github.event_name != 'pull_request' }}
         timeout-minutes: 40
